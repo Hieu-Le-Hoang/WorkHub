@@ -25,6 +25,8 @@ export interface AuditFilterCriteria {
     endDate: string;
     recordId: string;
     pageSize: number;
+    /** Client-side filter: chỉ giữ logs có changes chứa tên column này */
+    columnName?: string;
 }
 
 export interface TableOption {

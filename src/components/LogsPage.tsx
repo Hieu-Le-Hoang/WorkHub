@@ -72,6 +72,7 @@ const reducer = (state: AppState, action: Action): AppState => {
 
 const DateFilterInput: React.FC<{ label: string; value: string; onChange: (val: string) => void }> = ({ label, value, onChange }) => {
     const [inputValue, setInputValue] = useState('');
+    const hiddenDateRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (value) {
@@ -89,14 +90,14 @@ const DateFilterInput: React.FC<{ label: string; value: string; onChange: (val: 
 
     const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let val = e.target.value.replace(/[^0-9/]/g, '');
-        
+
         if (val.length > inputValue.length) {
             if (val.length === 2 && !val.includes('/')) val += '/';
             else if (val.length === 5 && val.split('/').length === 2) val += '/';
         }
-        
+
         setInputValue(val);
-        
+
         if (val.length === 10) {
             const parts = val.split('/');
             if (parts.length === 3) {
@@ -110,10 +111,37 @@ const DateFilterInput: React.FC<{ label: string; value: string; onChange: (val: 
         }
     };
 
+    const handleCalendarClick = () => {
+        if (hiddenDateRef.current) {
+            try {
+                hiddenDateRef.current.showPicker();
+            } catch {
+                hiddenDateRef.current.click();
+            }
+        }
+    };
+
     return (
         <div>
             <label className="audit-filter-label">{label}</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                {/* Hidden native date input — chỉ dùng để hiện picker */}
+                <input
+                    ref={hiddenDateRef}
+                    type="date"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        pointerEvents: 'none',
+                        width: 0,
+                        height: 0,
+                        border: 'none',
+                        padding: 0,
+                    }}
+                    tabIndex={-1}
+                />
                 <input
                     type="text"
                     value={inputValue}
@@ -123,28 +151,25 @@ const DateFilterInput: React.FC<{ label: string; value: string; onChange: (val: 
                     className="audit-filter-input"
                     style={{ flex: 1, paddingRight: '2rem' }}
                 />
-                <div style={{ position: 'absolute', right: 0, top: 0, width: '2rem', height: '100%', overflow: 'hidden' }}>
-                    <input
-                        type="date"
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        style={{
-                            position: 'absolute',
-                            right: '-1rem',
-                            top: 0,
-                            opacity: 0,
-                            width: '4rem',
-                            height: '100%',
-                            cursor: 'pointer',
-                            zIndex: 2,
-                            padding: 0,
-                            border: 'none',
-                        }}
-                    />
-                </div>
-                <div style={{ position: 'absolute', right: '0.45rem', pointerEvents: 'none', color: 'inherit', opacity: 0.5, zIndex: 1, display: 'flex' }}>
+                <button
+                    type="button"
+                    onClick={handleCalendarClick}
+                    style={{
+                        position: 'absolute',
+                        right: '0.45rem',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'inherit',
+                        opacity: 0.5,
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                    tabIndex={-1}
+                >
                     <Calendar size={14} />
-                </div>
+                </button>
             </div>
         </div>
     );
@@ -162,6 +187,7 @@ export const LogsPage: React.FC = () => {
         endDate: new Date().toISOString().split('T')[0],
         recordId: '',
         pageSize: 50,
+        columnName: '',
     });
 
     // Table list
@@ -279,8 +305,17 @@ export const LogsPage: React.FC = () => {
     const selectedTable = tables.find(t => t.logicalName === filters.tableName);
     const filteredTableOptions = tables.filter(t => t.displayName.toLowerCase().includes(tableSearch.toLowerCase()));
 
-    // Local search on current page changes
-    const displayLogs = currentLogs.filter(log => {
+    // Client-side filter: column name (match against changes text)
+    const columnFiltered = currentLogs.filter(log => {
+        const col = filters.columnName?.trim().toLowerCase();
+        if (!col) return true;
+        // Với UPDATE logs: changes có format "logicalName: old → new"
+        // Với CREATE/DELETE: changes = 'N/A', vẫn cho pass nếu không phải UPDATE
+        return log.changes?.toLowerCase().includes(col) ?? false;
+    });
+
+    // Local search on current page
+    const displayLogs = columnFiltered.filter(log => {
         if (!localSearch.trim()) return true;
         const q = localSearch.toLowerCase();
         return log.user.name.toLowerCase().includes(q)
@@ -429,6 +464,31 @@ export const LogsPage: React.FC = () => {
                             onChange={e => setFilters(prev => ({ ...prev, recordId: e.target.value }))}
                             className="audit-filter-input"
                         />
+                    </div>
+
+                    {/* Column Name (client-side filter) */}
+                    <div>
+                        <label className="audit-filter-label">Column Name</label>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                            <input
+                                type="text"
+                                placeholder="vd: cr44a_oituongco"
+                                value={filters.columnName ?? ''}
+                                onChange={e => setFilters(prev => ({ ...prev, columnName: e.target.value }))}
+                                className="audit-filter-input"
+                                style={{ flex: 1, paddingRight: filters.columnName ? '1.6rem' : undefined }}
+                            />
+                            {filters.columnName && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFilters(prev => ({ ...prev, columnName: '' }))}
+                                    style={{ position: 'absolute', right: '0.4rem', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', opacity: 0.5, padding: 0, display: 'flex' }}
+                                    title="Xóa filter"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Page Size */}

@@ -47,30 +47,20 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({ registration
         setProcessing(true);
         try {
             const token = await getAccessToken(instance, accounts[0]);
+            // Chỉ cập nhật trạng thái duyệt + lý do, KHÔNG gửi startDate/endDate
+            // để tránh lỗi lệch múi giờ (UTC → VN → UTC)
             const success = await updatePhieuDangKy(token, registration.crdfd_phieuangkyid, {
-                type: editData.type,
-                startDate: editData.startDate,
-                endDate: editData.endDate,
-                hours: Number(editData.hours),
                 reason: editData.reason,
                 quanLyTructiep: editData.quanLyTructiep,
                 capTrenDuyet: Number(editData.capTrenDuyet),
-                hinhThuc: editData.hinhThuc ? Number(editData.hinhThuc) : undefined,
-                soNgay: Number(editData.soNgay)
             });
 
             if (success) {
                 onUpdateSuccess({
                     ...registration,
-                    crdfd_loaiangky: editData.type,
-                    crdfd_tungay: editData.startDate,
-                    crdfd_enngay: editData.endDate,
-                    crdfd_sogio2: Number(editData.hours),
                     crdfd_diengiai: editData.reason,
                     crdfd_quanlytructiep: editData.quanLyTructiep,
                     crdfd_captrenduyet: Number(editData.capTrenDuyet),
-                    crdfd_hinhthuc: editData.hinhThuc ? Number(editData.hinhThuc) : undefined,
-                    cr1bb_songay: Number(editData.soNgay)
                 });
                 onClose();
             } else {

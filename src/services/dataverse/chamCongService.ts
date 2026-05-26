@@ -8,6 +8,7 @@ import { getStandardHours, formatDate } from '@/utils/workUtils';
 import { createFetchHeaders } from './common';
 import { DataverseChamCong, PhieuDangKy, ApprovalStatus, RegistrationType } from './types';
 import { fetchPhieuDangKyForMonth } from './registrationService';
+import { isVietnamHoliday, getHolidayName } from '@/constants/vietnamHolidays';
 
 /**
  * Fetch timekeeping data from Dataverse
@@ -50,19 +51,22 @@ function transformToRecords(dataverseData: DataverseChamCong[]): DayRecord[] {
         const trangthai = (item.crdfd_trangthai || "").toLowerCase();
         const ghichu = (item.crdfd_ghichu || "").toLowerCase();
 
-        const isHoliday = trangthai.includes('lễ') || trangthai.includes('holiday') ||
+        // Ưu tiên check danh sách ngày lễ cố định trước (bao gồm cả ngày Dataverse không có text "lễ")
+        const isHolidayFixed = isVietnamHoliday(datePart);
+
+        const isHolidayText = trangthai.includes('lễ') || trangthai.includes('holiday') ||
             ghichu.includes('lễ') || ghichu.includes('holiday') ||
             ghichu.includes('cty nghỉ') || ghichu.includes('công ty nghỉ') ||
             ghichu.includes('tết') || trangthai.includes('tết');
 
-        if (trangthai.includes('phép') || trangthai.includes('phep') || trangthai.includes('leave')) {
+        if (isHolidayFixed || isHolidayText) {
+            status = 'holiday';
+        } else if (trangthai.includes('phép') || trangthai.includes('phep') || trangthai.includes('leave')) {
             status = 'leave';
         } else if (trangthai.includes('trễ') || trangthai.includes('tre') || trangthai.includes('late')) {
             status = 'late';
         } else if (trangthai.includes('nghỉ') || trangthai.includes('nghi') || trangthai.includes('off')) {
             status = 'off';
-        } else if (isHoliday) {
-            status = 'holiday';
         }
 
         const isWorkday = dayOfWeek !== 0;
@@ -115,6 +119,10 @@ function transformToRecords(dataverseData: DataverseChamCong[]): DayRecord[] {
             calculatedWorkValue = parseFloat((ratio * maxVal).toFixed(2));
         }
 
+        // Ghi chú ngày lễ nếu chưa có ghi chú
+        const holidayName = getHolidayName(datePart);
+        const finalNote = item.crdfd_ghichu || (holidayName ? `🎉 ${holidayName}` : undefined);
+
         return {
             date: datePart,
             hoursWorked,
@@ -122,7 +130,7 @@ function transformToRecords(dataverseData: DataverseChamCong[]): DayRecord[] {
             workValue: calculatedWorkValue,
             sogiolam: hoursWorked,
             recordId: item.crdfd_bangchamconghangngayid,
-            note: item.crdfd_ghichu || undefined,
+            note: finalNote,
             checkIn: item.crdfd_checkin,
             checkOut: item.crdfd_checkout,
             registration: item.registration,

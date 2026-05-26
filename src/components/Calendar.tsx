@@ -5,6 +5,7 @@ import {
     getDayOfWeek,
     formatDate
 } from '@/utils/workUtils';
+import { isVietnamHoliday, getHolidayName } from '@/constants/vietnamHolidays';
 
 interface CalendarProps {
     year: number;
@@ -63,6 +64,9 @@ export const Calendar: React.FC<CalendarProps> = React.memo(({
         // Ngày CN
         if (dayOfWeek === 0) {
             classes.push('off-day');
+        } else if (isVietnamHoliday(dateStr)) {
+            // Ngày lễ — check trước cả tương lai
+            classes.push('holiday');
         } else if (date > today) {
             classes.push('future');
         } else if (record) {
@@ -143,18 +147,35 @@ export const Calendar: React.FC<CalendarProps> = React.memo(({
                                         {record && record.hoursWorked > 0 && (
                                             <span className="hours-badge">{record.hoursWorked}h</span>
                                         )}
+                                        {/* Badge ngày lễ — hiện cả khi không có record */}
+                                        {isVietnamHoliday(dateStr) && (
+                                            <span
+                                                className="status-badge holiday"
+                                                title={getHolidayName(dateStr)}
+                                            >
+                                                Lễ
+                                            </span>
+                                        )}
                                         {record && record.status === 'leave' && (
                                             <span className="status-badge leave">Phép</span>
                                         )}
                                         {record && record.status === 'late' && (
                                             <span className="status-badge late">Trễ</span>
                                         )}
-                                        {record && record.status === 'holiday' && (
-                                            <span className="status-badge holiday">Lễ</span>
-                                        )}
                                         {record && record.status === 'warning' && (
                                             <span className="status-badge warning" title="Thiếu check-in/out hoặc giờ bất thường">⚠️</span>
                                         )}
+                                        {/* Badge thiếu công — chưa có phiếu đăng ký */}
+                                        {record && record.status !== 'holiday' && !isVietnamHoliday(dateStr) &&
+                                            record.workValue < (getDayOfWeek(year, month, day!) === 6 ? 0.5 : 1.0) &&
+                                            !record.registration && (
+                                                <span
+                                                    className="status-badge insufficient-warn"
+                                                    title="Thiếu giờ — click để tạo phiếu"
+                                                >
+                                                    ⚠️
+                                                </span>
+                                            )}
                                         {record && record.registration && (
                                             <span className="status-badge registration" title={record.registration.typeName}>📝</span>
                                         )}

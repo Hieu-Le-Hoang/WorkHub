@@ -1,4 +1,5 @@
 import { DayRecord, MonthSummary } from '@/types/types';
+import { isVietnamHoliday } from '@/constants/vietnamHolidays';
 
 /**
  * Lấy số ngày trong tháng
@@ -176,3 +177,104 @@ export function calculateActualHours(inT: string, outT: string, standardHours: n
         return 0;
     }
 }
+
+// ─────────────────────────────────────────────
+// Attendance Alert (30-day rolling check)
+// ─────────────────────────────────────────────
+
+export type AlertLevel = 'missing' | 'no-checkin' | 'insufficient';
+
+export interface AttendanceAlert {
+    date: string;          // YYYY-MM-DD
+    level: AlertLevel;
+    label: string;         // Mô tả ngắn để hiển thị
+    hoursWorked?: number;
+    standardHours?: number;
+}
+
+/**
+ * Quét 30 ngày rolling kể từ hôm nay trở về trước.
+ * Trả về danh sách ngày có vấn đề chấm công, sắp xếp mới → cũ.
+ */
+export function getAttendanceAlerts(
+    records: DayRecord[],
+    days: number = 30
+): AttendanceAlert[] {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build map để tra cứu nhanh
+    const recordMap = new Map<string, DayRecord>();
+    records.forEach(r => recordMap.set(r.date, r));
+
+    const alerts: AttendanceAlert[] = [];
+
+    for (let i = 1; i <= days; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+
+        const dayOfWeek = date.getDay();
+        // Bỏ qua CN (0)
+        if (dayOfWeek === 0) continue;
+
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const day = date.getDate();
+        const dateStr = formatDate(year, month, day);
+
+        // Bỏ qua ngày lễ
+        if (isVietnamHoliday(dateStr)) continue;
+        const record = recordMap.get(dateStr);
+
+        // ── Case 1: Không có record nào ──
+        if (!record) {
+            const stdH = getStandardHours(dayOfWeek);
+            alerts.push({
+                date: dateStr,
+                level: 'missing',
+                label: 'Không có dữ liệu chấm công',
+                standardHours: stdH,
+            });
+            continue;
+        }
+
+        // Bỏ qua ngày đã được giải quyết: nghỉ phép, off, lễ
+        if (record.status === 'leave' || record.status === 'off' || record.status === 'holiday') {
+            continue;
+        }
+
+        // ── Case 2: Thiếu check-in hoặc check-out ──
+        const hasCheckIn = !!record.checkIn && record.checkIn !== '00:00:00';
+        const hasCheckOut = !!record.checkOut && record.checkOut !== '00:00:00';
+
+        if (!hasCheckIn || !hasCheckOut) {
+            const missing = !hasCheckIn && !hasCheckOut
+                ? 'Thiếu check-in & check-out'
+                : !hasCheckIn ? 'Thiếu check-in' : 'Thiếu check-out';
+            alerts.push({
+                date: dateStr,
+                level: 'no-checkin',
+                label: missing,
+                hoursWorked: record.hoursWorked,
+                standardHours: getStandardHours(dayOfWeek),
+            });
+            continue;
+        }
+
+        // ── Case 3: Thiếu giờ + chưa có phiếu ──
+        const standardWorkValue = getStandardWorkValue(dayOfWeek);
+        if (record.workValue < standardWorkValue && !record.registration) {
+            const stdH = getStandardHours(dayOfWeek);
+            alerts.push({
+                date: dateStr,
+                level: 'insufficient',
+                label: `Thiếu giờ (${record.hoursWorked}h/${stdH}h)`,
+                hoursWorked: record.hoursWorked,
+                standardHours: stdH,
+            });
+        }
+    }
+
+    return alerts;
+}
+

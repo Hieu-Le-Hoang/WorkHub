@@ -84,6 +84,9 @@ export const Calendar: React.FC<CalendarProps> = React.memo(({
             } else {
                 classes.push('normal');
             }
+        } else if (dayOfWeek !== 0) {
+            // Ngày làm việc quá khứ, không có record nào → thiếu dữ liệu chấm công
+            classes.push('missing');
         }
 
         return classes.join(' ');
@@ -174,6 +177,18 @@ export const Calendar: React.FC<CalendarProps> = React.memo(({
                                                     title="Thiếu giờ — click để tạo phiếu"
                                                 >
                                                     ⚠️
+                                                </span>
+                                            )}
+                                        {/* Badge ngày làm việc quá khứ không có dữ liệu chấm công */}
+                                        {!record && day &&
+                                            new Date(year, month, day) <= today &&
+                                            getDayOfWeek(year, month, day) !== 0 &&
+                                            !isVietnamHoliday(dateStr) && (
+                                                <span
+                                                    className="status-badge missing-warn"
+                                                    title="Chưa có dữ liệu chấm công — chưa đăng ký phép"
+                                                >
+                                                    !
                                                 </span>
                                             )}
                                         {record && record.registration && (

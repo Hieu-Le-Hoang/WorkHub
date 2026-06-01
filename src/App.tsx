@@ -82,6 +82,8 @@ function App() {
     const [year, setYear] = useState(today.getFullYear());
     const [month, setMonth] = useState(today.getMonth());
     const [records, setRecords] = useState<DayRecord[]>([]);
+    // allRecords = current month + previous month — dùng cho 30-day rolling alert
+    const [allRecords, setAllRecords] = useState<DayRecord[]>([]);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [summary, setSummary] = useState<MonthSummary>({
         standardDays: 0,
@@ -151,10 +153,24 @@ function App() {
         try {
             if (isAuthenticated && accounts.length > 0 && employeeId) {
                 const token = await getAccessToken(instance, accounts[0]);
-                const data = await fetchChamCongData(token, year, month, employeeId);
+
+                // Tháng hiện tại
+                const currentData = fetchChamCongData(token, year, month, employeeId);
+
+                // Tháng trước — để đảm bảo 30-day rolling có đủ dữ liệu
+                const prevDate = new Date(year, month - 1, 1);
+                const prevData = fetchChamCongData(token, prevDate.getFullYear(), prevDate.getMonth(), employeeId);
+
+                const [data, prevMonthData] = await Promise.all([currentData, prevData]);
+
                 setRecords(data);
+                // Gộp 2 tháng cho rolling alert, dedup theo date
+                const merged = new Map<string, DayRecord>();
+                [...prevMonthData, ...data].forEach(r => merged.set(r.date, r));
+                setAllRecords(Array.from(merged.values()));
             } else {
                 setRecords([]);
+                setAllRecords([]);
                 if (!isAuthenticated) {
                     setError('Vui lòng đăng nhập để xem dữ liệu chấm công.');
                 }
@@ -163,6 +179,7 @@ function App() {
             console.error('Error loading data:', e);
             setError('Không thể tải dữ liệu từ Dataverse.');
             setRecords([]);
+            setAllRecords([]);
         } finally {
             setLoading(false);
         }
@@ -238,6 +255,7 @@ function App() {
                             summary={summary}
                             year={year}
                             month={month}
+                            records={allRecords}
                         />
                     </div>
                 </div>

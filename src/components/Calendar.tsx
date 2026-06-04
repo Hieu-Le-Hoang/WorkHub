@@ -78,8 +78,8 @@ export const Calendar: React.FC<CalendarProps> = React.memo(({
                 classes.push('late');
             } else if (record.status === 'warning') {
                 classes.push('warning');
-            } else if (record.workValue < (dayOfWeek === 6 ? 0.5 : 1.0)) {
-                // Kiểm tra workValue thay vì hoursWorked để bao gồm phiếu đăng ký đã duyệt
+            } else if (record.workValue < (dayOfWeek === 6 ? 0.5 : 1.0) && !record.registration) {
+                // Chỉ đánh đỏ nếu thiếu giờ VÀ không có phiếu đăng ký
                 classes.push('insufficient');
             } else {
                 classes.push('normal');

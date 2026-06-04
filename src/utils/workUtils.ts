@@ -89,15 +89,15 @@ export function getInsufficientDays(
             return false;
         }
 
-        // Kiểm tra theo workValue để bao gồm cả phiếu đăng ký đã duyệt
-        // Nếu có phiếu đăng ký đã duyệt, workValue sẽ >= standardWorkValue
+        // Kiểm tra theo workValue (bao gồm cả công từ phiếu đăng ký đã duyệt)
         const standardWorkValue = getStandardWorkValue(dayOfWeek);
 
-        // Nếu workValue >= công chuẩn thì coi như đủ công
+        // workValue >= chuẩn → coi như đủ công (phiếu bổ sung đủ giờ)
         if (record.workValue >= standardWorkValue) {
             return false;
         }
 
+        // Vẫn thiếu giờ (dù có phiếu DiTreVeSom hay không)
         return record.hoursWorked < standardHours;
     });
 }
@@ -240,6 +240,11 @@ export function getAttendanceAlerts(
 
         // Bỏ qua ngày đã được giải quyết: nghỉ phép, off, lễ
         if (record.status === 'leave' || record.status === 'off' || record.status === 'holiday') {
+            continue;
+        }
+
+        // Đã có phiếu đăng ký → người dùng đã xử lý, bỏ qua mọi loại alert
+        if (record.registration) {
             continue;
         }
 

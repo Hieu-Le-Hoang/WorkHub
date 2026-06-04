@@ -7,6 +7,7 @@ interface WorkSummaryProps {
     year: number;
     month: number;
     records: DayRecord[];
+    onRefresh?: () => void;
 }
 
 const ALERT_CONFIG: Record<string, { color: string; bg: string; border: string; icon: string }> = {
@@ -65,7 +66,7 @@ const AlertRow: React.FC<{ alert: AttendanceAlert }> = ({ alert }) => {
     );
 };
 
-export const WorkSummary: React.FC<WorkSummaryProps> = React.memo(({ summary, year, month, records }) => {
+export const WorkSummary: React.FC<WorkSummaryProps> = React.memo(({ summary, year, month, records, onRefresh }) => {
     const [alertFilter, setAlertFilter] = useState<string>('all');
 
     const percentage = summary.standardDays > 0
@@ -88,8 +89,15 @@ export const WorkSummary: React.FC<WorkSummaryProps> = React.memo(({ summary, ye
         'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
     ];
 
-    // Tính alerts từ 30 ngày rolling (dùng toàn bộ records, không lọc theo tháng)
-    const allAlerts = useMemo(() => getAttendanceAlerts(records, 30), [records]);
+    // Tính alerts từ 30 ngày rolling, sau đó lọc theo tháng đang xem
+    const allAlerts = useMemo(() => {
+        const alerts = getAttendanceAlerts(records, 30);
+        // Chỉ hiển thị alert của tháng đang xem, tránh lẫn tháng khác
+        return alerts.filter(a => {
+            const [y, m] = a.date.split('-').map(Number);
+            return y === year && (m - 1) === month;
+        });
+    }, [records, year, month]);
 
     const counts = useMemo(() => ({
         missing: allAlerts.filter(a => a.level === 'missing').length,
@@ -127,9 +135,9 @@ export const WorkSummary: React.FC<WorkSummaryProps> = React.memo(({ summary, ye
                 </div>
 
                 <div className="summary-card actual">
-                    <div className="card-icon">✅</div>
+                    <div className="card-icon">{summary.actualDays >= summary.standardDays ? '✅' : '⚠️'}</div>
                     <div className="card-content">
-                        <span className="card-value">{summary.actualDays.toFixed(1)}</span>
+                        <span className="card-value">{summary.actualDays.toFixed(2)}</span>
                         <span className="card-label">Công thực tế</span>
                     </div>
                 </div>
@@ -139,7 +147,7 @@ export const WorkSummary: React.FC<WorkSummaryProps> = React.memo(({ summary, ye
                     <div className="card-content">
                         <span className={`card-value ${summary.actualDays >= summary.standardDays ? 'positive' : 'negative'}`}>
                             {summary.actualDays >= summary.standardDays ? '+' : ''}
-                            {(summary.actualDays - summary.standardDays).toFixed(1)}
+                            {(summary.actualDays - summary.standardDays).toFixed(2)}
                         </span>
                         <span className="card-label">Chênh lệch</span>
                     </div>
@@ -171,6 +179,15 @@ export const WorkSummary: React.FC<WorkSummaryProps> = React.memo(({ summary, ye
                             <span className="alert-total-badge">{allAlerts.length}</span>
                         )}
                     </span>
+                    {onRefresh && (
+                        <button
+                            className="alert-refresh-btn"
+                            onClick={onRefresh}
+                            title="Tải lại dữ liệu mới nhất"
+                        >
+                            🔄
+                        </button>
+                    )}
                 </div>
 
                 {allAlerts.length > 0 ? (

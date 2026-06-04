@@ -256,6 +256,7 @@ function App() {
                             year={year}
                             month={month}
                             records={allRecords}
+                            onRefresh={loadData}
                         />
                     </div>
                 </div>

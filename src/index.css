@@ -1928,6 +1928,30 @@ h1, h2, h3 {
   border-radius: 20px;
 }
 
+.alert-refresh-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.alert-refresh-btn:hover {
+  background: rgba(52, 146, 171, 0.15);
+  border-color: rgba(52, 146, 171, 0.4);
+  color: #3492AB;
+  transform: rotate(180deg);
+}
+
+
 /* Filter chips */
 .alert-filters {
   display: flex;

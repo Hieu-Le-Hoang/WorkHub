@@ -10,4 +10,25 @@ export default defineConfig({
             '@': path.resolve(__dirname, 'src'),
         },
     },
+    build: {
+        chunkSizeWarningLimit: 600,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    // React core
+                    'vendor-react': ['react', 'react-dom', 'react-router-dom', 'react-is'],
+                    // Azure MSAL auth
+                    'vendor-msal': ['@azure/msal-browser', '@azure/msal-react'],
+                    // Charts
+                    'vendor-charts': ['recharts'],
+                    // Excel export
+                    'vendor-xlsx': ['xlsx-js-style'],
+                    // Icons
+                    'vendor-icons': ['lucide-react'],
+                    // UI utilities
+                    'vendor-ui': ['sonner', '@tanstack/react-virtual'],
+                },
+            },
+        },
+    },
 })

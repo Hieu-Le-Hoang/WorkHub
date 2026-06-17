@@ -375,17 +375,6 @@ export const DayDetail: FC<DayDetailProps> = ({ record, onClose, employeeId, onS
                                 </div>
 
                                 <div className="form-group">
-                                    <label>Số giờ:</label>
-                                    <input
-                                        type="number"
-                                        step="0.5"
-                                        value={formData.hours}
-                                        title="Số giờ"
-                                        onChange={(e) => setFormData(prev => ({ ...prev, hours: parseFloat(e.target.value) || 0 }))}
-                                    />
-                                </div>
-
-                                <div className="form-group">
                                     <label>Lý do:</label>
                                     <textarea
                                         className="day-note-area registration-textarea"

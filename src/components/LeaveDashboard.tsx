@@ -241,7 +241,7 @@ export const LeaveDashboard: React.FC<LeaveDashboardProps> = ({ employeeId, empl
                                             <th>Loại</th>
                                             <th>Từ ngày</th>
                                             <th>Đến ngày</th>
-                                            <th className="text-right">Số giờ</th>
+                                            <th className="text-right">Số ngày</th>
                                             <th>Lý do</th>
                                             <th>Trạng thái</th>
                                         </tr>
@@ -253,7 +253,7 @@ export const LeaveDashboard: React.FC<LeaveDashboardProps> = ({ employeeId, empl
                                                 <td>{getRegistrationTypeName(reg.crdfd_loaiangky)}</td>
                                                 <td>{formatDate(reg.crdfd_tungay)}</td>
                                                 <td>{formatDate(reg.crdfd_enngay)}</td>
-                                                <td className="text-right">{reg.crdfd_sogio2 || '-'}</td>
+                                                <td className="text-right">{reg.cr1bb_songay ?? '-'}</td>
                                                 <td className="note-cell">{reg.crdfd_diengiai || '-'}</td>
                                                 <td>
                                                     <span className={`status-badge ${getStatusClass(reg.crdfd_captrenduyet)}`}>

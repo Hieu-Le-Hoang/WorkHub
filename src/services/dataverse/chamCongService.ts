@@ -152,9 +152,7 @@ function mergeTimekeepingAndRegistration(
     timekeepingRecords.forEach(r => recordsMap.set(r.date, r));
 
     const processRegistration = (reg: PhieuDangKy) => {
-        if (reg.crdfd_captrenduyet !== ApprovalStatus.DaDuyet) {
-            return;
-        }
+        const isApproved = reg.crdfd_captrenduyet === ApprovalStatus.DaDuyet;
 
         const start = new Date(reg.crdfd_tungay);
         const end = new Date(reg.crdfd_enngay);
@@ -174,30 +172,41 @@ function mergeTimekeepingAndRegistration(
             };
 
             if (!existing || existing.hoursWorked === 0) {
-                const { status, hours, workVal } = mapRegistrationToStatus(reg.crdfd_loaiangky, reg.crdfd_sogio2);
-                recordsMap.set(dateStr, {
-                    date: dateStr,
-                    hoursWorked: hours,
-                    status: status,
-                    workValue: workVal,
-                    note: `DK: ${reg.crdfd_diengiai || ''}`,
-                    registration: registrationInfo
-                });
+                // Chỉ tạo record placeholder nếu phiếu đã duyệt
+                if (isApproved) {
+                    const { status, hours, workVal } = mapRegistrationToStatus(reg.crdfd_loaiangky, reg.crdfd_sogio2);
+                    recordsMap.set(dateStr, {
+                        date: dateStr,
+                        hoursWorked: hours,
+                        status: status,
+                        workValue: workVal,
+                        note: `DK: ${reg.crdfd_diengiai || ''}`,
+                        registration: registrationInfo
+                    });
+                } else {
+                    // Phiếu chưa duyệt nhưng không có chấm công → vẫn mark registration để tắt cảnh báo
+                    if (existing) {
+                        existing.registration = registrationInfo;
+                    }
+                }
             } else {
+                // Luôn gán registration (kể cả chưa duyệt) để tắt cảnh báo "thiếu công"
                 existing.registration = registrationInfo;
 
-                // Cộng thêm workValue từ phiếu đăng ký đã duyệt
-                // VD: Chấm công 4h + WFH 4h phiếu duyệt = đủ công
-                const dayOfWeek = d.getDay();
-                const regWorkVal = calculateRegistrationWorkValue(
-                    reg.crdfd_loaiangky,
-                    reg.crdfd_sogio2,
-                    dayOfWeek
-                );
+                if (isApproved) {
+                    // Cộng thêm workValue từ phiếu đăng ký đã duyệt
+                    // VD: Chấm công 4h + WFH 4h phiếu duyệt = đủ công
+                    const dayOfWeek = d.getDay();
+                    const regWorkVal = calculateRegistrationWorkValue(
+                        reg.crdfd_loaiangky,
+                        reg.crdfd_sogio2,
+                        dayOfWeek
+                    );
 
-                // Cộng dồn nhưng không vượt quá công chuẩn
-                const maxWorkVal = (dayOfWeek === 6) ? 0.5 : 1.0;
-                existing.workValue = Math.min(existing.workValue + regWorkVal, maxWorkVal);
+                    // Cộng dồn nhưng không vượt quá công chuẩn
+                    const maxWorkVal = (dayOfWeek === 6) ? 0.5 : 1.0;
+                    existing.workValue = Math.min(existing.workValue + regWorkVal, maxWorkVal);
+                }
 
                 if (reg.crdfd_diengiai) {
                     existing.note = existing.note

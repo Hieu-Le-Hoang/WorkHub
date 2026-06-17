@@ -48,8 +48,8 @@ export const LeaveList: React.FC<LeaveListProps> = ({ registrations, onSelect })
                                         {reg.crdfd_tungay !== reg.crdfd_enngay && (
                                             <div className="text-sm text-muted">→ {formatDateVN(reg.crdfd_enngay)}</div>
                                         )}
-                                        {reg.crdfd_sogio2 && reg.crdfd_sogio2 > 0 && (
-                                            <div className="text-xs badge" style={{ marginTop: '0.25rem', display: 'inline-block' }}>{reg.crdfd_sogio2} giờ</div>
+                                        {reg.cr1bb_songay != null && reg.cr1bb_songay > 0 && (
+                                            <div className="text-xs badge" style={{ marginTop: '0.25rem', display: 'inline-block' }}>{reg.cr1bb_songay} ngày</div>
                                         )}
                                     </td>
                                     <td className="note-cell">{reg.crdfd_diengiai}</td>

@@ -126,29 +126,16 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({ registration
                                 </div>
                             </div>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label className="block text-xs font-medium text-zinc-500 mb-1">Số giờ</label>
-                                    <input
-                                        type="number"
-                                        step="0.5"
-                                        className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-2 text-sm text-white focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
-                                        value={editData.hours}
-                                        title="Số giờ"
-                                        onChange={e => setEditData({ ...editData, hours: Number(e.target.value) })}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="block text-xs font-medium text-zinc-500 mb-1">Số ngày</label>
-                                    <input
-                                        type="number"
-                                        step="0.5"
-                                        className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-2 text-sm text-white focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
-                                        value={editData.soNgay}
-                                        title="Số ngày"
-                                        onChange={e => setEditData({ ...editData, soNgay: Number(e.target.value) })}
-                                    />
-                                </div>
+                            <div className="form-group">
+                                <label className="block text-xs font-medium text-zinc-500 mb-1">Số ngày nghỉ phép</label>
+                                <input
+                                    type="number"
+                                    step="0.5"
+                                    className="w-full bg-zinc-800/30 border border-zinc-700/30 rounded-lg p-2 text-sm text-zinc-400 focus:outline-none cursor-not-allowed"
+                                    value={editData.soNgay}
+                                    title="Số ngày (tự động tính từ hệ thống)"
+                                    readOnly
+                                />
                             </div>
 
                             {editData.type !== RegistrationType.NghiPhep && (

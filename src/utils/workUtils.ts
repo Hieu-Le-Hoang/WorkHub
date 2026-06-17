@@ -89,6 +89,11 @@ export function getInsufficientDays(
             return false;
         }
 
+        // Đã có phiếu đăng ký → người dùng đã xử lý, không nhắc nữa
+        if (record.registration) {
+            return false;
+        }
+
         // Kiểm tra theo workValue (bao gồm cả công từ phiếu đăng ký đã duyệt)
         const standardWorkValue = getStandardWorkValue(dayOfWeek);
 

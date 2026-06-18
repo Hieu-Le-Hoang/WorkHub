@@ -27,7 +27,7 @@ export const AuditSettingsPage: React.FC = () => {
     const loadedRef = useRef(false);
     const [selectedItem, setSelectedItem] = useState<AuditTableInfo | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
-    const [toggling, setToggling] = useState(false);
+    const [togglingSet, setTogglingSet] = useState<Set<string>>(new Set());
     const [confirmToggle, setConfirmToggle] = useState(false);
     const [toggleTarget, setToggleTarget] = useState<AuditTableInfo | null>(null);
 
@@ -72,12 +72,13 @@ export const AuditSettingsPage: React.FC = () => {
         }
     }, [instance, accounts]);
 
-    // Toggle audit handler — uses toggleTarget (decoupled from sidebar selectedItem)
+    // Toggle audit handler — per-table async, không block các table khác
     const handleToggleAudit = useCallback(async () => {
         if (!toggleTarget || !isAuthenticated || accounts.length === 0) return;
         const target = toggleTarget;
-        setToggling(true);
+        setTogglingSet(prev => new Set(prev).add(target.logicalName));
         setConfirmToggle(false);
+        setToggleTarget(null);
         try {
             const token = await acquireToken(instance, accounts[0], dataverseConfig.scopes);
             const newValue = !target.isAuditEnabled;
@@ -106,8 +107,7 @@ export const AuditSettingsPage: React.FC = () => {
             console.error('Toggle audit failed:', err);
             alert(`Failed to toggle audit: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
-            setToggling(false);
-            setToggleTarget(null);
+            setTogglingSet(prev => { const s = new Set(prev); s.delete(target.logicalName); return s; });
         }
     }, [toggleTarget, selectedItem, instance, accounts, isAuthenticated]);
 
@@ -234,11 +234,11 @@ export const AuditSettingsPage: React.FC = () => {
                                             <button
                                                 className={`audit-switch ${table.isAuditEnabled ? 'audit-switch--on' : ''}`}
                                                 onClick={(e) => { e.stopPropagation(); setToggleTarget(table); setConfirmToggle(true); }}
-                                                disabled={toggling}
+                                                disabled={togglingSet.has(table.logicalName)}
                                                 title={table.isAuditEnabled ? 'Tắt Audit' : 'Bật Audit'}
                                             >
                                                 <span className="audit-switch-thumb">
-                                                    {toggling && toggleTarget?.logicalName === table.logicalName && <Loader2 size={10} className="spin" />}
+                                                    {togglingSet.has(table.logicalName) && <Loader2 size={10} className="spin" />}
                                                 </span>
                                             </button>
                                         </td>
@@ -277,10 +277,10 @@ export const AuditSettingsPage: React.FC = () => {
                                         <button
                                             className={`audit-switch ${selectedItem.isAuditEnabled ? 'audit-switch--on' : ''}`}
                                             onClick={() => { setToggleTarget(selectedItem); setConfirmToggle(true); }}
-                                            disabled={toggling}
+                                            disabled={togglingSet.has(selectedItem.logicalName)}
                                         >
                                             <span className="audit-switch-thumb">
-                                                {toggling && toggleTarget?.logicalName === selectedItem.logicalName && <Loader2 size={10} className="spin" />}
+                                                {togglingSet.has(selectedItem.logicalName) && <Loader2 size={10} className="spin" />}
                                             </span>
                                         </button>
                                     </div></div>

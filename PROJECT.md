@@ -1,7 +1,7 @@
 # WorkHub
 
-**Last Updated**: 2026-06-08 11:53
-**Last Reviewed**: 2026-06-08 11:53
+**Last Updated**: 2026-06-22 11:31
+**Last Reviewed**: 2026-06-22 11:31
 
 > Internal web app quản lý hệ thống, chấm công, nghỉ phép và tools nội bộ — kết nối Dataverse qua MSAL Azure AD.
 
@@ -19,7 +19,8 @@
 | Data Source | Dataverse API (`wecare-ii.crm5.dynamics.com/api/data/v9.2`) |
 | Charts | `recharts` ^3.8 |
 | State | `zustand` (global) + `useState` (component-level) |
-| Server State | `useApiData` hook (central fetch + cache engine) |
+| Server State | `useApiData` hook (central fetch + cache engine, TTL 10 phút) |
+| Pagination | `usePagination` hook (client-side, cho data < 200 items) |
 | Notifications | `sonner` ^2.0.7 (toast) |
 | Routing | `react-router-dom` ^7.13 |
 | Virtualization | `@tanstack/react-virtual` ^3.13 |
@@ -59,7 +60,7 @@ npx tsc --noEmit    # Type check only (không emit file)
 
 ## Authentication
 
-- **Method**: MSAL popup login → Azure AD
+- **Method**: MSAL `loginRedirect` → Azure AD (auto-login khi chưa auth)
 - **Scopes chính**: `https://wecare-ii.crm5.dynamics.com/.default`
 - **Multi-scope**: Power BI, Power Platform Admin, MS Graph (mỗi scope dùng `acquireToken()` riêng)
 - **Cache**: `sessionStorage`
@@ -80,12 +81,13 @@ flowchart TD
     subgraph Auth["Auth Layer"]
         Config["config/authConfig.ts\n(MSAL config + scopes)"]
         Hook["useApiData hook\n(cache TTL 10 phút)"]
+        Pagi["usePagination hook\n(client-side, <200 items)"]
     end
 
     subgraph Pages["Pages by Group"]
         Ops["Operations\nData · Reports · Fabric\nDataflow · Automate · Canvas\nConnections · AuditSettings"]
         Finance["Finance\nBilling · License"]
-        Security["Security\nSecurityPage · AuditLog\nSignIn Log · Incidents\nChangeLog · Compliance"]
+        Security["Security\nSecurityPage · AuditLog\nChangeLog · Compliance"]
         Settings["Settings\nHealth · Environment\nDomains · Backups"]
         Personal["Personal\nTimesheet · Calendar\nRegistration · Payment\nWorkSummary"]
     end
@@ -103,13 +105,14 @@ flowchart TD
     App --> Pages
     App --> Config
     Pages --> Hook
+    Pages --> Pagi
     Hook --> Azure
     Hook --> DV
     Azure --> AzureAPI
     DV --> Dataverse
 ```
 
-*Kiến trúc 3 lớp: Pages → useApiData hook → Service layer → APIs. Services đã refactor thành 2 domain rõ ràng.*
+*Kiến trúc 3 lớp: Pages → useApiData/usePagination hooks → Service layer → APIs. Services tách thành 2 domain rõ ràng (azure/ + dataverse/).*
 
 ---
 
@@ -121,10 +124,11 @@ src/
 ├── main.tsx                  # Entry point — MsalProvider wrapper
 ├── index.css                 # Toàn bộ styling (~183KB — nguyên khối)
 ├── components/               # Page components (31 files)
-│   ├── ui/                   # Atomic components (Button, ConfirmDialog...)
-│   └── flow/                 # AutomateFlow sub-components
+│   ├── ui/                   # Atomic components (ConfirmDialog)
+│   └── flow/                 # AutomateFlow sub-components (FlowOverview, FlowStructureViewer)
 ├── hooks/
-│   └── useApiData.ts         # Central fetch engine + cache (TTL 10 phút)
+│   ├── useApiData.ts         # Central fetch engine + cache (TTL 10 phút)
+│   └── usePagination.ts      # Client-side pagination (< 200 items)
 ├── services/
 │   ├── azure/                # 19 service files: PP, Graph, Cost, Flow analytics...
 │   └── dataverse/            # 8 domain files: authService, chamCongService,
@@ -152,16 +156,16 @@ docs/
 
 ### ✅ Operations
 
-| Page | Mô tả | API |
-|------|--------|-----|
-| **DataPage** | Database & storage: Portals, Dataverse tables, Fabric tabs | Dataverse metadata |
-| **ReportsPage** | Power BI gallery: search, gradient thumbnails, iframe embed | Power BI REST |
-| **FabricPage** | Microsoft Fabric — Workspace, items (Dataflow, Dataset, Report, Lakehouse) | Power BI API |
-| **DataflowPage** | Power Apps + Fabric dataflows — status, history, delete, schedule | PA Dataverse + PBI API |
-| **AutomateFlowPage** | Power Automate flow list — Lightweight Health Check (~700 flows, ~20s) + flow analytics | Flow API + flowAnalyticsService |
-| **CanvasAppPage** | Canvas Apps list + status + delete | Power Apps API |
-| **ConnectionsPage** | Power Platform Connections — grouped by connector, status, delete | Power Apps API |
-| **AuditSettingsPage** | Dataverse Audit configuration — bật/tắt audit per table/column | Dataverse Metadata API |
+| Page | Mô tả | API | Size |
+|------|--------|-----|------|
+| **DataPage** | Database & storage: Portals, Dataverse tables, Fabric tabs | Dataverse metadata | 868B |
+| **ReportsPage** | Power BI gallery: search, gradient thumbnails, iframe embed | Power BI REST | 10KB |
+| **FabricPage** | Microsoft Fabric — Workspace, items (Dataflow, Dataset, Report, Lakehouse) | Power BI API | 14KB |
+| **DataflowPage** | Power Apps + Fabric dataflows — status, history, delete, schedule | PA Dataverse + PBI API | **60KB** |
+| **AutomateFlowPage** | Power Automate flow list — Lightweight Health Check (~700 flows, ~20s) + flow analytics | Flow API + flowAnalyticsService | 38KB |
+| **CanvasAppPage** | Canvas Apps list + status + delete | Power Apps API | 22KB |
+| **ConnectionsPage** | Power Platform Connections — grouped by connector, status, delete | Power Apps API | 25KB |
+| **AuditSettingsPage** | Dataverse Audit configuration — bật/tắt audit per table/column | Dataverse Metadata API | 22KB |
 
 ### ✅ Dev Tools
 - Portal links: Stitch, GitHub, Figma, NPM, Project-Tracker
@@ -185,23 +189,22 @@ docs/
 
 ### ✅ Security & Compliance
 
-| Page | Mô tả | API |
-|------|--------|-----|
-| **SecurityPage** | Risky users, security alerts | MS Graph Security |
-| **LogsPage** (Audit Log) | Dataverse Audit logs — cursor-based pagination | Dataverse |
-| **SignIn Log** | Azure AD Sign-in logs | MS Graph |
-| **ChangeLog** | Changelog viewer | — |
-| **Incidents** | Incident management | — (placeholder) |
-| **Compliance** | Compliance dashboard | — (placeholder) |
+| Page | Mô tả | API | Status |
+|------|--------|-----|--------|
+| **SecurityPage** | Risky users, security alerts | MS Graph Security | ✅ Done |
+| **LogsPage** (Audit Log) | Dataverse Audit logs — cursor-based pagination | Dataverse | ✅ Done |
+| **SignIn Log** | Azure AD Sign-in logs | — | 🚧 Placeholder |
+| **ChangeLog** | Changelog viewer — sẽ tích hợp GitHub API | GitHub API | 🚧 Placeholder |
+| **Incidents** | Incident management | — | 🚧 Placeholder |
+| **Compliance** | Compliance dashboard | — | 🚧 Placeholder |
 
 ### ✅ Personal
 
 | Page | Mô tả | API |
 |------|--------|-----|
+| **Timesheet (Calendar)** | Calendar chấm công + WorkSummary | Dataverse / chamCongService |
+| **DayDetail** | Chi tiết ngày làm việc (modal/drawer) | Dataverse |
 | **LeaveDashboard** | Đăng ký nghỉ phép — team view, approver view | Dataverse |
-| **Calendar (Timesheet)** | Calendar chấm công | Dataverse / chamCongService |
-| **DayDetail** | Chi tiết ngày làm việc | Dataverse |
-| **WorkSummary** | Tổng hợp công | Dataverse |
 | **Registration** | Đăng ký (ra vào, OT...) | Dataverse / registrationService |
 | **Payment** | Đề nghị thanh toán | Dataverse / dnttService |
 
@@ -250,7 +253,16 @@ const { data, loading, error, refresh: loadData } = useApiData<T>({
 ### Pattern B — Cursor Pagination (data > 5k / server-side paging)
 
 - Dùng `useReducer` với `currentPage`, `nextLink`, `history[]`
-- Ví dụ: `LogsPage.tsx` (Sign-in logs — ~100k records)
+- Ví dụ: `LogsPage.tsx` (Audit logs — server-side cursor)
+
+### Pattern C — `usePagination` (client-side, data < 200 items)
+
+```tsx
+const { items, page, totalPages, next, prev, goTo, hasNext, hasPrev } = usePagination(allItems, 20);
+```
+
+- Dùng khi data đã load hết vào memory
+- Default page size: 20 items
 
 ---
 
@@ -261,7 +273,8 @@ const { data, loading, error, refresh: loadData } = useApiData<T>({
 | `index.css` nguyên khối | ~183KB, khó maintain | Tạm chấp nhận — `styles/features/` đã tạo sẵn slot để split sau |
 | Recharts tooltip `fontSize: '11px'` | Library prop, không thể thay class | **Ngoại lệ hợp lý** — không vi phạm DESIGN.md |
 | Zustand vẫn ít dùng | Phần lớn state là local `useState` | OK — không cần global state phức tạp ở WorkHub |
-| Security/Compliance pages | Incidents, Compliance, ChangeLog chưa có API | Placeholder — cần xác định API source |
+| Security/Compliance pages | SignInLog, Incidents, Compliance, ChangeLog chưa có API | Placeholder — cần xác định API source |
+| `DataflowPage.tsx` 60KB | File lớn nhất project — nhiều logic phức tạp (tabs, history, schedule) | Tạm chấp nhận — refactor sau khi stable |
 
 ### ❌ Không làm
 - **Không split `index.css`** khi đang active dev — nguy cơ break styles cao, làm sau milestone stable
@@ -272,29 +285,33 @@ const { data, loading, error, refresh: loadData } = useApiData<T>({
 
 ## Current Status
 
-**Phase**: Active Development — Feature expansion, Personal section đang mở rộng
+**Phase**: Active Development — Security section đang expand, 4 placeholder pages cần implement
 
-### Đã hoàn thành (trước 2026-06-08)
-- ✅ `services/dataverse/` refactor hoàn tất — tách thành 8 domain files (authService, chamCongService, dnttService, notificationService, registrationService...)
+### Đã hoàn thành
+- ✅ `services/dataverse/` refactor hoàn tất — tách thành 8 domain files
 - ✅ `services/azure/` đầy đủ 19 service files — tách clean theo domain
 - ✅ Tạo `docs/DESIGN.md` — tài liệu chuẩn UI/UX cho toàn project
 - ✅ Audit & fix font violations trên **tất cả pages** — thay `px` → `rem` hoặc CSS class
-- ✅ Tất cả 14 pages đã dùng `health-page` root container
-- ✅ Personal section mở rộng: thêm DayDetail, NotificationPanel, LeaveDetailModal, LeaveStats, LeaveList, Registration, Payment
-- ✅ Security section mở rộng: thêm SignIn Log, ChangeLog, Incidents, Compliance routes
+- ✅ Tất cả pages đã dùng `health-page` root container
+- ✅ Personal section mở rộng: DayDetail, NotificationPanel, LeaveDetailModal, LeaveStats, LeaveList, Registration, Payment
+- ✅ Security section mở rộng: SignIn Log, ChangeLog, Incidents, Compliance routes (placeholder)
 - ✅ `flowAnalyticsService.ts` (18KB) — analytics cho AutomateFlowPage
 - ✅ `dvAuditService.ts` — Dataverse Audit service riêng biệt
+- ✅ `usePagination.ts` — client-side pagination hook mới
 
 ### Blockers hiện tại
-- Security pages (Incidents, Compliance) chưa xác định API source
+- 4 Security pages (SignInLog, Incidents, Compliance, ChangeLog) chưa xác định API source → đang là placeholder
+- `DataflowPage.tsx` 60KB — lớn nhất project, cần review refactor sau milestone stable
 
 ---
 
 ## Next Steps
 
-- [ ] **AutomateFlowPage** — kiểm tra lại filter UI có đúng pattern DESIGN.md không (38KB, lớn nhất)
-- [ ] **ManagementView.tsx** — 19KB, cần review xem đã align design pattern chưa
+- [ ] **SignIn Log page** — implement Azure AD Sign-in logs (MS Graph `auditLogs/signIns`)
+- [ ] **AutomateFlowPage** — kiểm tra filter UI align DESIGN.md không (38KB)
+- [ ] **ManagementView.tsx** — 19KB, review design pattern alignment
 - [ ] **Incidents & Compliance pages** — xác định API source và implement
+- [ ] **ChangeLog page** — integrate GitHub API (`/orgs/WCG-HieuLe/repos` releases)
 - [ ] **Audit `index.css`** — tìm và xóa các class dead code (cleanup, low risk)
 - [ ] **`styles/features/`** — bắt đầu migrate CSS theo feature module (sau milestone stable)
 - [ ] **Build production** — chạy `yarn build` và verify không có TypeScript error
@@ -306,10 +323,12 @@ const { data, loading, error, refresh: loadData } = useApiData<T>({
 | Quyết định | Lý do |
 |------------|-------|
 | **Dùng `useApiData` thay useState+useEffect** | Cache TTL 10 phút, tránh re-fetch dư thừa khi switch tab, consistent error handling |
+| **Thêm `usePagination` hook riêng** | Tách biệt client-side pagination (< 200 items) khỏi Pattern B (server-side cursor) — reusable, không lặp logic |
 | **Giữ `index.css` nguyên khối** | Mọi component share CSS variables — split sẽ cần import chains phức tạp, risk cao |
 | **Không dùng Tailwind cho layout chính** | Design system dùng CSS custom properties với dark theme phức tạp — Tailwind không đủ flexible cho glassmorphism |
-| **Pattern B cho LogsPage** | Sign-in logs có thể > 100k records, cursor pagination là cách duy nhất feasible |
+| **Pattern B cho LogsPage** | Audit logs có thể > 100k records, cursor pagination là cách duy nhất feasible |
 | **Recharts cho charts thay vì D3** | Recharts React-native, ít boilerplate, đủ cho nhu cầu cost dashboard hiện tại |
 | **`rem` thay `px` cho font** | Respect user font preference, consistent scaling, DESIGN.md standard |
 | **Tách `services/dataverse/` thành domain files** | Thay vì 1 file 73KB, mỗi domain (chamCong, leave, auth...) có service riêng — dễ maintain, tree-shakeable |
+| **`loginRedirect` thay `loginPopup`** | Popup bị chặn trên một số browser — redirect flow reliable hơn cho production |
 | **`styles/features/` tạo sẵn** | Chuẩn bị slot cho CSS split tương lai — không force migrate ngay khi đang active dev |

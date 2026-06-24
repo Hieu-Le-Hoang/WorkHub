@@ -1,3 +1,12 @@
+---
+type: Specification
+title: WorkHub — App Specification
+description: Đặc tả chi tiết giao diện, sidebar và các module chức năng của WorkHub
+timestamp: 2026-06-24T11:00:00Z
+owner: Hiếu Lê
+status: active
+---
+
 # WorkHub — App Specification
 
 > Internal admin dashboard cho Tech Lead, gom tất cả công việc giám sát và vận hành hệ thống vào 1 nơi.

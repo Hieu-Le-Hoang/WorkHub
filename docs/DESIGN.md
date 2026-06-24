@@ -1,3 +1,12 @@
+---
+type: Guideline
+title: WorkHub Admin Page — Design Pattern
+description: Hướng dẫn và tiêu chuẩn thiết kế UI/UX cho toàn bộ các trang trong hệ thống WorkHub
+timestamp: 2026-04-25T00:00:00Z
+owner: Hiếu Lê
+status: active
+---
+
 # WorkHub Admin Page — Design Pattern
 
 > Template chuẩn cho tất cả admin/management pages trong WorkHub.

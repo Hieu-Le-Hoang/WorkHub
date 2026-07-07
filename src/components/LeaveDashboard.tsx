@@ -184,28 +184,8 @@ export const LeaveDashboard: React.FC<LeaveDashboardProps> = ({ employeeId, empl
                 </div>
 
                 <div className="list-view-actions">
-                    {mode === 'registration' && (
-                        <a
-                            href="https://wecare-ii.crm5.dynamics.com/main.aspx?appid=7c0ada0d-cf0d-f011-998a-6045bd1cb61e&newWindow=true&pagetype=entitylist&etn=crdfd_phieuangky&viewid=ec3c56bb-5723-4663-b1d7-a9c741ff27bd&viewType=1039"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="external-link-icon"
-                            title="Mở trong Dynamics 365"
-                        >
-                            🔗
-                        </a>
-                    )}
-                    {mode === 'dntt' && (
-                        <a
-                            href="https://wecare-ii.crm5.dynamics.com/main.aspx?appid=d6bc8d55-f810-f011-998a-6045bd1bb1cd&pagetype=entitylist&etn=cr44a_enghithanhtoan&viewid=1d9ecf7f-47b3-ee11-a568-000d3aa3f582&viewType=1039"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="external-link-icon"
-                            title="Mở DNTT trong Dynamics 365"
-                        >
-                            🔗
-                        </a>
-                    )}
+
+
                 </div>
             </div>
 
@@ -244,6 +224,7 @@ export const LeaveDashboard: React.FC<LeaveDashboardProps> = ({ employeeId, empl
                                             <th className="text-right">Số ngày</th>
                                             <th>Lý do</th>
                                             <th>Trạng thái</th>
+                                            <th style={{ width: '2.5rem' }}></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -259,6 +240,17 @@ export const LeaveDashboard: React.FC<LeaveDashboardProps> = ({ employeeId, empl
                                                     <span className={`status-badge ${getStatusClass(reg.crdfd_captrenduyet)}`}>
                                                         {getApprovalStatusText(reg.crdfd_captrenduyet)}
                                                     </span>
+                                                </td>
+                                                <td onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                                                    <a
+                                                        href={`https://wecare-ii.crm5.dynamics.com/main.aspx?appid=7c0ada0d-cf0d-f011-998a-6045bd1cb61e&pagetype=entityrecord&etn=crdfd_phieuangky&id=${reg.crdfd_phieuangkyid}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="external-link-icon"
+                                                        title="Mở record trong Dynamics 365"
+                                                    >
+                                                        🔗
+                                                    </a>
                                                 </td>
                                             </tr>
                                         ))}
@@ -286,6 +278,7 @@ export const LeaveDashboard: React.FC<LeaveDashboardProps> = ({ employeeId, empl
                                             <th>Ngày tạo</th>
                                             <th>Trạng thái</th>
                                             <th>Người tạo</th>
+                                            <th style={{ width: '2.5rem' }}></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -308,6 +301,17 @@ export const LeaveDashboard: React.FC<LeaveDashboardProps> = ({ employeeId, empl
                                                     </span>
                                                 </td>
                                                 <td>{dntt.ownerName || '-'}</td>
+                                                <td onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                                                    <a
+                                                        href={`https://wecare-ii.crm5.dynamics.com/main.aspx?appid=d6bc8d55-f810-f011-998a-6045bd1bb1cd&pagetype=entityrecord&etn=cr44a_enghithanhtoan&id=${dntt.cr44a_enghithanhtoanid}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="external-link-icon"
+                                                        title="Mở record trong Dynamics 365"
+                                                    >
+                                                        🔗
+                                                    </a>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

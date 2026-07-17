@@ -35,6 +35,11 @@ import {
     Calendar,
     FileText,
     DollarSign,
+    // Demo
+    FlaskConical,
+    Users,
+    Package,
+    ShoppingCart,
     // Other
     PanelLeftClose,
     PanelLeft,
@@ -122,6 +127,16 @@ const navGroups: NavGroup[] = [
             { path: ROUTES.PERSONAL_PAYMENT, label: 'Payment Request', icon: <DollarSign size={16} /> },
         ],
     },
+    {
+        id: 'demo',
+        label: 'Demo',
+        icon: <FlaskConical size={16} />,
+        items: [
+            { path: ROUTES.DEMO_CUSTOMER, label: 'Customer', icon: <Users size={16} /> },
+            { path: ROUTES.DEMO_PRODUCT, label: 'Product', icon: <Package size={16} /> },
+            { path: ROUTES.DEMO_SALE_ORDER, label: 'Sale Order', icon: <ShoppingCart size={16} /> },
+        ],
+    },
 ];
 
 const SIDEBAR_COLLAPSED_KEY = 'workhub_sidebar_collapsed';
@@ -158,14 +173,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
     }, [collapsed]);
 
-    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-        operations: true,
-
-        settings: false,
-        finance: false,
-        security: false,
-        personal: false,
-    });
+    // Derive từ navGroups để group mới thêm không bị thiếu key (toggleGroup rebuild từ Object.keys)
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
+        Object.fromEntries(navGroups.map(g => [g.id, g.id === 'operations']))
+    );
 
     const toggleGroup = (groupId: string) => {
         setExpandedGroups(prev => {

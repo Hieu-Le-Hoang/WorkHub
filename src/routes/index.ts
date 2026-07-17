@@ -1,6 +1,6 @@
 /**
  * Route configuration for WorkHub
- * Organized by sidebar groups: Operations, Dev Tools, Settings, Finance, Security, Personal
+ * Organized by sidebar groups: Operations, Dev Tools, Settings, Finance, Security, Personal, Demo
  */
 
 /** Route path constants — single source of truth */
@@ -42,6 +42,11 @@ export const ROUTES = {
     PERSONAL_TIMESHEET: '/personal/timesheet',
     PERSONAL_REGISTRATION: '/personal/registration',
     PERSONAL_PAYMENT: '/personal/payment',
+
+    // ── Demo ──
+    DEMO_CUSTOMER: '/demo/customer',
+    DEMO_PRODUCT: '/demo/product',
+    DEMO_SALE_ORDER: '/demo/sale-order',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
@@ -85,6 +90,11 @@ export const ROUTE_META: Record<string, { title: string; showDateNav: boolean }>
     [ROUTES.PERSONAL_TIMESHEET]: { title: 'Timesheet', showDateNav: true },
     [ROUTES.PERSONAL_REGISTRATION]: { title: 'Registration', showDateNav: true },
     [ROUTES.PERSONAL_PAYMENT]: { title: 'Payment Request', showDateNav: true },
+
+    // Demo
+    [ROUTES.DEMO_CUSTOMER]: { title: 'Customer', showDateNav: false },
+    [ROUTES.DEMO_PRODUCT]: { title: 'Product', showDateNav: false },
+    [ROUTES.DEMO_SALE_ORDER]: { title: 'Sale Order', showDateNav: false },
 };
 
 /** Management sub-view type (used by ManagementView) */

@@ -29,6 +29,7 @@ import { CanvasAppPage } from '@/components/CanvasAppPage';
 import { AuditSettingsPage } from '@/components/AuditSettingsPage';
 import { ConnectionsPage } from '@/components/ConnectionsPage';
 import { EnvironmentPage } from '@/components/EnvironmentPage';
+import { DemoEmbedPage } from '@/components/DemoEmbedPage';
 
 import { ROUTE_META, ROUTE_TO_MGMT_SUBVIEW, ROUTES } from '@/routes';
 
@@ -342,6 +343,9 @@ function App() {
                             <Route path={ROUTES.MGMT_SIGNIN_LOG} element={<SignInLogPage />} />
                             <Route path={ROUTES.OPS_INCIDENTS} element={<IncidentsPage />} />
                             <Route path={ROUTES.MGMT_COMPLIANCE} element={<ManagementPage />} />
+
+                            {/* Demo — 1 route wildcard để component sống xuyên suốt, iframe keep-alive */}
+                            <Route path="/demo/*" element={<DemoEmbedPage />} />
 
                             {/* Fallback */}
                             <Route path="*" element={<Dashboard userName={userName} />} />

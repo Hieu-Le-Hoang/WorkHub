@@ -123,6 +123,13 @@ flowchart TD
   npx tsc --noEmit    # Type check TypeScript
   ```
 
+### Code Style & Conventions
+- **Functional Only**: Chỉ dùng Functional Components và Hooks — KHÔNG dùng Class Components.
+- **Naming**: Component `PascalCase` (VD: `UserProfile.tsx`); function/variable `camelCase` (VD: `handleSubmit`).
+- **Imports**: Dùng absolute imports `@/...` (đã config trong `tsconfig.json`) thay vì relative imports sâu (`../../../`).
+- **UI tokens**: Font, table, filter-chip chi tiết theo `docs/DESIGN.md` (Inter body, Lexend heading, table `0.8rem`, filter-chip variants `--success/--danger/--warn`).
+- **State**: Ưu tiên React Context hoặc Zustand cho global state; tránh dồn logic vào `useEffect`, ưu tiên xử lý trong event handlers.
+
 ### Environment Variables
 | Variable | Required | Mô tả |
 |----------|----------|--------|

@@ -83,3 +83,22 @@ Tiêu chí yếu ("làm cho nó chạy") → cần clarify liên tục.
 **Bộ quy tắc đang hoạt động khi:** diff ít thay đổi thừa, ít phải viết lại
 do over-engineer, câu hỏi làm rõ xuất hiện TRƯỚC khi implement,
 và không có surprise dependency / breaking change nào bị bỏ qua.
+
+---
+
+## 6. Mọi thứ nằm ở đâu
+- **Code ứng dụng** (Vite + React + TS): `src/` — `components/` · `src/routes/index.ts` (khai route) · `services/` · `hooks/` · `context/` · `config/` (MSAL `authConfig.ts`) · `lib/` · `utils/` · `types/` · `constants/` · `styles/`.
+- **Tài liệu dự án**: `PROJECT.md` (tổng quan, review định kỳ) · `WorkHub_Spec.md` (spec) · `docs/DESIGN.md` (design rules) · `index.md` · `log.md`.
+- **Quyết định**: `decisions/NNNN-*.md` (ADR). Đọc trước khi đổi kiến trúc.
+- **Luật riêng của dự án**: `linters/` — luật viết thành script chạy được.
+- **Danh sách gate**: `scripts/gates.sh` — gate nào chạy; `scripts/verify.sh` chạy chúng.
+- **Việc đang làm / tiếp theo / gate đang tắt**: `TODO.md`.
+- **Tech stack**: đọc `package.json` / `tsconfig.json` — đừng chép lại vào đây.
+
+## 7. Lệnh & luật harness
+- `sh scripts/verify.sh` — gate đầy đủ (lint, format, security, doc-paths, typecheck, test). **Không ai chạy hộ** — chạy trước khi báo xong; báo xong = dán kết quả lệnh này.
+- `node linters/<rule>.mjs <file>` — chạy một luật trên một file.
+- **Không** đọc/sửa `.env*`, key, credential. (PreToolUse **DENY**.)
+- **Không** sửa config lint/test/hook để dập lỗi. (PreToolUse **ASK** — chỉ xin khi chính người muốn đổi luật.)
+- **Không** hardcode secret hay log PII. (`linters/security.mjs`; PostToolUse báo ngay sau mỗi lần sửa.)
+- Gate đỏ thì sửa **code**; luật sai thì sửa **luật** (kèm 1 dòng lý do trong `decisions/` hoặc `TODO.md`).

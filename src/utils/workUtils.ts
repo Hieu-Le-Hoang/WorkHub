@@ -138,14 +138,6 @@ export function formatDate(year: number, month: number, day: number): string {
 }
 
 /**
- * Lấy tên thứ trong tuần
- */
-export function getDayName(dayOfWeek: number): string {
-    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    return days[dayOfWeek];
-}
-
-/**
  * Lấy giờ phút từ chuỗi ISO (HH:MM)
  */
 export function getTimeFromISO(isoStr?: string): string {

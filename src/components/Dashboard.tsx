@@ -72,22 +72,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ userName = 'User' }) => {
                 <p className="text-muted">{dateStr}</p>
             </div>
 
-            <div className="dashboard-stats">
+            <div className="stat-strip">
                 {stats.map((stat) => (
-                    <div key={stat.label} className="stat-card">
-                        <div className="stat-card-header">
-                            <span className="stat-label">{stat.label}</span>
-                            <div className={`stat-icon stat-icon--${stat.theme}`}>
-                                {stat.icon}
-                            </div>
+                    <div key={stat.label} className="stat-strip-item">
+                        <div className={`stat-icon stat-icon--${stat.theme}`}>
+                            {stat.icon}
                         </div>
-                        <span className="stat-value">{stat.value}</span>
+                        <div className="stat-strip-info">
+                            <span className="stat-value">{stat.value}</span>
+                            <span className="stat-label">{stat.label}</span>
+                        </div>
                     </div>
                 ))}
             </div>
 
             <div className="dashboard-section">
-                <h3>Quick Access</h3>
                 <div className="qa-groups">
                     {linkGroups.map((group) => (
                         <div key={group.label} className="qa-group">

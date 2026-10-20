@@ -6,10 +6,15 @@ export const msalConfig = {
         clientId: import.meta.env.VITE_CLIENT_ID || "",
         authority: import.meta.env.VITE_AUTHORITY || "https://login.microsoftonline.com/common",
         redirectUri: window.location.origin + (import.meta.env.BASE_URL || '/').replace(/\/+$/, ''),
+        // Không cho MSAL navigate thêm 1 lần về URL gốc sau khi auth xong.
+        // Mỗi lần đổi domain là 1 cơ hội để browser nhảy profile và mở tab mới.
+        navigateToLoginRequestUrl: false,
     },
     cache: {
         cacheLocation: "localStorage" as const,
-        storeAuthStateInCookie: false,
+        // Giữ auth state trong cookie để sống sót qua chặng redirect,
+        // không phụ thuộc hoàn toàn vào storage.
+        storeAuthStateInCookie: true,
     },
 };
 
@@ -19,11 +24,6 @@ export const dataverseConfig = {
     baseUrl: import.meta.env.VITE_DATAVERSE_URL || "https://wecare-ii.crm5.dynamics.com/api/data/v9.2",
     orgUrl: import.meta.env.VITE_DATAVERSE_ORG_URL || "https://wecare-ii.crm5.dynamics.com",
     scopes: [import.meta.env.VITE_DATAVERSE_SCOPE || "https://wecare-ii.crm5.dynamics.com/.default"],
-};
-
-export const azureManagementConfig = {
-    baseUrl: "https://management.azure.com",
-    scopes: ["https://management.azure.com/.default"],
 };
 
 export const graphConfig = {
@@ -53,10 +53,6 @@ export const powerPlatformAdminConfig = {
 
 // ── Sensitive IDs (from env vars) ──
 
-export const AZURE_SUBSCRIPTION_ID = import.meta.env.VITE_AZURE_SUBSCRIPTION_ID || "b230aef2-52a0-4800-8a8d-91a6880c86a2";
 export const PP_ENV_ID = import.meta.env.VITE_PP_ENV_ID || "de210e4b-cd22-e605-91ca-8e841aad4b8e";
 export const TENANT_ID = import.meta.env.VITE_TENANT_ID || "";
-
-// Tên nhân viên để filter
-export const EMPLOYEE_ID = import.meta.env.VITE_EMPLOYEE_ID || "";
 

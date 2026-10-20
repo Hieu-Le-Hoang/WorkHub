@@ -50,14 +50,6 @@ export interface PPEnvironment {
     urlName: string;
 }
 
-export interface PPDataverse {
-    canvasApps: CanvasApp[];
-    flows: FlowDefinition[];
-    environments: PPEnvironment[];
-    totalFlows: number;
-    totalApps: number;
-}
-
 // ── Canvas App Types ──
 const APP_TYPE_MAP: Record<number, string> = {
     0: 'Canvas App',
@@ -253,20 +245,4 @@ export async function fetchEnvironments(envToken: string): Promise<PPEnvironment
             urlName: (linked.domainName as string) || '',
         };
     });
-}
-
-export async function fetchPPDataverse(dvToken: string, envToken?: string): Promise<PPDataverse> {
-    const [canvasApps, flowResult, environments] = await Promise.all([
-        fetchCanvasApps(dvToken),
-        fetchFlows(dvToken),
-        envToken ? fetchEnvironments(envToken) : Promise.resolve([]),
-    ]);
-
-    return {
-        canvasApps,
-        flows: flowResult.flows,
-        environments,
-        totalFlows: flowResult.total,
-        totalApps: canvasApps.length,
-    };
 }

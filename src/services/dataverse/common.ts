@@ -58,27 +58,3 @@ export async function fetchDataverse<T>(
     return response.json();
 }
 
-/**
- * Format date for OData queries (YYYY-MM-DD)
- */
-export function formatDateForOData(year: number, month: number, day: number): string {
-    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
-
-/**
- * Build OData filter string safely
- */
-export function buildODataFilter(baseFilter: string, additionalFilters?: string[]): string {
-    if (!additionalFilters || additionalFilters.length === 0) {
-        return baseFilter;
-    }
-    return `${baseFilter} and ${additionalFilters.join(' and ')}`;
-}
-
-/**
- * Escape single quotes for OData queries
- */
-export function escapeODataString(str: string): string {
-    return str.replace(/'/g, "''");
-}
-

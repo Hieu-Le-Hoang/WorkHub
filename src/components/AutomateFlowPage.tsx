@@ -4,14 +4,14 @@ import {
     Zap, RefreshCw, AlertTriangle, Search, X,
     CheckCircle, XCircle, Copy, Check,
     ChevronDown, ChevronRight, ExternalLink, Clock, History,
-    BarChart3, List, Loader2, Trash2, Shield
+    Activity, Loader2, Trash2, Shield
 } from 'lucide-react';
 import type { FlowDefinition, FlowRun } from '@/services/azure/powerPlatformService';
 import { fetchFlows, fetchFlowRuns, fetchFlowRunTriggerOutput, deleteFlow } from '@/services/azure/powerPlatformService';
 import { acquireToken } from '@/services/azure/tokenService';
 import { dataverseConfig, powerAutomateConfig } from '@/config/authConfig';
 import { useApiData } from '@/hooks/useApiData';
-import { FlowOverview } from '@/components/flow/FlowOverview';
+import { FlowHealthModal, useFlowHealthCheck, HEALTH_PERIODS, type HealthFilter } from '@/components/flow/FlowHealthCheck';
 import { FlowStructureViewer } from '@/components/flow/FlowStructureViewer';
 import {
     fetchFlowMetadata,
@@ -21,10 +21,8 @@ import {
     type FlowStructure,
 } from '@/services/azure/flowAnalyticsService';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import type { HealthCheckResult } from '@/services/azure/flowAnalyticsService';
 
 const CACHE_KEY = 'automate_flows';
-type TabType = 'overview' | 'list';
 
 /* ─── Formatters ─── */
 function formatDate(dateStr: string): string {
@@ -80,15 +78,22 @@ export const AutomateFlowPage: React.FC = () => {
     const total = apiData?.total || 0;
     const loaded = flows.length > 0;
 
+    // Health Check — scan state dùng chung cho toolbar + popup
+    const health = useFlowHealthCheck(flows);
+    const healthResult = health.result;
+    const openHealth = (filter: HealthFilter) => { setHealthFilter(filter); setHealthOpen(true); };
+    const runHealthCheck = () => {
+        openHealth('all');
+        if (!health.scanning) health.start();
+    };
+
     const [search, setSearch] = useState('');
     const [selectedFlow, setSelectedFlow] = useState<FlowDefinition | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-    const [activeTab, setActiveTab] = useState<TabType>('overview');
+    const [healthOpen, setHealthOpen] = useState(false);
+    const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [confirmTarget, setConfirmTarget] = useState<FlowDefinition | null>(null);
-
-    // Flow overview health result state
-    const [healthResult, setHealthResult] = useState<HealthCheckResult | null>(null);
 
     // History popup state
     const [historyName, setHistoryName] = useState('');
@@ -239,13 +244,11 @@ export const AutomateFlowPage: React.FC = () => {
         <div className="list-view-container" style={{ padding: '0.75rem 1.25rem' }}>
 
             {/* ── KPI Strip ── */}
-            <div className="overflow-x-auto scrollbar-hide pb-2">
-                <div className="grid grid-cols-4 gap-3 mb-4 min-w-[900px] xl:min-w-full">
-                    <StatCard icon={<Zap size={16} />} label="Total Flows" value={loading && !loaded ? '...' : total.toString()} sub="Total in environment" colorVar="var(--accent-primary)" />
-                    <StatCard icon={<XCircle size={16} />} label="Draft" value={loading && !loaded ? '...' : draftCount.toString()} sub="Turned off" colorVar="var(--warning)" />
-                    <StatCard icon={<AlertTriangle size={16} />} label="Flows with Errors" value={healthResult ? healthResult.failedFlows.length.toString() : '—'} sub={healthResult ? `${healthResult.totalFailedRuns} total failed runs` : 'Require Health Check'} colorVar="var(--danger)" />
-                    <StatCard icon={<Shield size={16} />} label="Stuck Flows" value={healthResult ? healthResult.stuckFlows.length.toString() : '—'} sub={healthResult ? `Running > 50 runs` : 'Require Health Check'} colorVar="var(--warning)" />
-                </div>
+            <div className="billing-stats">
+                <StatCard icon={<Zap size={16} />} label="Total Flows" value={loading && !loaded ? '...' : total.toString()} sub="Total in environment" colorVar="var(--accent-primary)" />
+                <StatCard icon={<XCircle size={16} />} label="Draft" value={loading && !loaded ? '...' : draftCount.toString()} sub="Turned off" colorVar="var(--warning)" />
+                <StatCard icon={<AlertTriangle size={16} />} label="Flows with Errors" value={healthResult ? healthResult.failedFlows.length.toString() : '—'} sub={healthResult ? `${healthResult.totalFailedRuns} total failed runs` : 'Require Health Check'} colorVar="var(--danger)" onClick={healthResult ? () => openHealth('failed') : undefined} />
+                <StatCard icon={<Shield size={16} />} label="Stuck Flows" value={healthResult ? healthResult.stuckFlows.length.toString() : '—'} sub={healthResult ? `Running > 50 runs` : 'Require Health Check'} colorVar="var(--warning)" onClick={healthResult ? () => openHealth('stuck') : undefined} />
             </div>
 
             {/* ── Error Banner ── */}
@@ -265,31 +268,42 @@ export const AutomateFlowPage: React.FC = () => {
             {/* ── Tab Bar + Actions ── */}
             <div className="list-view-header" style={{ borderBottom: 'none', marginBottom: '0.5rem' }}>
                 <div className="list-view-toolbar">
-                    <div className="sub-tabs">
-                        <button className={`sub-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
-                            <BarChart3 size={14} style={{ marginRight: 4 }} /> Overview
-                        </button>
-                        <button className={`sub-tab ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>
-                            <List size={14} style={{ marginRight: 4 }} /> Flow List
-                        </button>
+                    <div className="list-view-search">
+                        <Search size={14} className="list-view-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Filter flows..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                        {search && (
+                            <button onClick={() => setSearch('')} className="list-view-search-clear">
+                                <X size={12} />
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="list-view-actions">
-                    {activeTab === 'list' && (
-                        <div className="list-view-search">
-                            <Search size={14} className="list-view-search-icon" />
-                            <input
-                                type="text"
-                                placeholder="Filter flows..."
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                            />
-                            {search && (
-                                <button onClick={() => setSearch('')} className="list-view-search-clear">
-                                    <X size={12} />
-                                </button>
-                            )}
-                        </div>
+                    <div className="filter-chips">
+                        {HEALTH_PERIODS.map(p => (
+                            <button
+                                key={p.value}
+                                className={`filter-chip ${health.daysRange === p.value ? 'filter-chip--active filter-chip--accent' : ''}`}
+                                onClick={() => health.setDaysRange(p.value)}
+                                disabled={health.scanning}
+                            >
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
+                    {health.scanning ? (
+                        <button onClick={() => openHealth('all')} className="filter-chip filter-chip--action" title="Xem tiến độ">
+                            <Loader2 size={12} className="animate-spin" /> Scanning {health.progress}%
+                        </button>
+                    ) : (
+                        <button onClick={runHealthCheck} className="filter-chip filter-chip--action" title="Chạy Health Check">
+                            <Activity size={12} /> Run Health Check
+                        </button>
                     )}
                     <button onClick={() => loadData()} disabled={loading} className="action-icon-btn" title="Refresh">
                         <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -308,17 +322,6 @@ export const AutomateFlowPage: React.FC = () => {
             {/* ── Tab Content ── */}
             {(loaded || flows.length > 0) && (
                 <>
-                    {activeTab === 'overview' && (
-                        <FlowOverview 
-                            flows={flows} 
-                            onDeleteFlow={(id, name) => setConfirmTarget({ id, name } as FlowDefinition)}
-                            deletingId={deletingId}
-                            healthResult={healthResult}
-                            onHealthResultChange={setHealthResult}
-                        />
-                    )}
-
-                    {activeTab === 'list' && (
                         <div className="list-view-table-wrapper">
                             {ownerGroups.length === 0 && !loading ? (
                                 <div className="list-view-empty-state">
@@ -388,9 +391,19 @@ export const AutomateFlowPage: React.FC = () => {
                                 </div>
                             )}
                         </div>
-                    )}
                 </>
             )}
+
+            {/* ═══ Health Check Modal ═══ */}
+            <FlowHealthModal
+                open={healthOpen}
+                onClose={() => setHealthOpen(false)}
+                health={health}
+                filter={healthFilter}
+                onFilterChange={setHealthFilter}
+                onDeleteFlow={(id, name) => setConfirmTarget({ id, name } as FlowDefinition)}
+                deletingId={deletingId}
+            />
 
             {/* ═══ Detail Sidebar (RIGHT PANEL) ═══ */}
             {selectedFlow && (
@@ -617,27 +630,15 @@ export const AutomateFlowPage: React.FC = () => {
    ═══════════════════════════════════════════════ */
 
 /* ── KPI Card ── */
-function StatCard({ icon, label, value, sub, colorVar }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub: string; colorVar: string }) {
+function StatCard({ icon, label, value, sub, colorVar, onClick }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub: string; colorVar: string; onClick?: () => void }) {
     return (
-        <div className="rounded-xl p-3 relative overflow-hidden bg-[var(--bg-card)] border border-[var(--border)] shadow-sm group hover:shadow-md transition-all">
-            <div className="absolute top-0 left-0 w-full h-[3px]" style={{ background: colorVar }} />
-            <div
-                className="absolute -top-10 -right-10 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-2xl"
-                style={{ background: colorVar }}
-            />
-            
-            <div className="flex items-center gap-2 mb-1.5">
-                <div className="p-1.5 rounded-lg flex items-center justify-center" style={{ background: `color-mix(in srgb, ${colorVar} 15%, transparent)`, color: colorVar }}>
-                    {icon}
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] line-clamp-1" style={{ fontFamily: "var(--font-heading)" }} title={label}>
-                    {label}
-                </span>
+        <div className="billing-stat-card" onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined} title={onClick ? 'Xem chi tiết' : undefined}>
+            <div className="billing-stat-header">
+                <span className="billing-stat-label">{label}</span>
+                <span style={{ color: colorVar, display: 'flex' }}>{icon}</span>
             </div>
-            <div className="text-xl font-bold tracking-tight text-[var(--text-primary)]" style={{ fontFamily: "var(--font-heading)" }}>
-                {value}
-            </div>
-            <div className="text-[11px] mt-0.5 font-medium text-[var(--text-muted)] line-clamp-1" title={sub}>{sub}</div>
+            <span className="billing-stat-value">{value}</span>
+            <span className="billing-stat-sub" title={sub}>{sub}</span>
         </div>
     );
 }

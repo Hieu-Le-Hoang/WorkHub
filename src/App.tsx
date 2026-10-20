@@ -29,7 +29,6 @@ import { CanvasAppPage } from '@/components/CanvasAppPage';
 import { AuditSettingsPage } from '@/components/AuditSettingsPage';
 import { ConnectionsPage } from '@/components/ConnectionsPage';
 import { EnvironmentPage } from '@/components/EnvironmentPage';
-import { DemoEmbedPage } from '@/components/DemoEmbedPage';
 
 import { ROUTE_META, ROUTE_TO_MGMT_SUBVIEW, ROUTES } from '@/routes';
 
@@ -74,6 +73,9 @@ const SignInLogPage = () => (
 
 
 
+// Đánh dấu tab này đã tự redirect đăng nhập 1 lần — xem cầu chì ở auto-login effect.
+const AUTO_LOGIN_FLAG = 'workhub_auto_login_tried';
+
 function App() {
     const { instance, accounts, inProgress } = useMsal();
     const isAuthenticated = useIsAuthenticated();
@@ -95,6 +97,7 @@ function App() {
     const [error, setError] = useState<string | null>(null);
     const [employeeId, setEmployeeId] = useState<string | null>(null);
     const [employeeName, setEmployeeName] = useState<string | null>(null);
+    const [autoLoginBlocked, setAutoLoginBlocked] = useState(false);
 
     const handleLogin = useCallback(async () => {
         try {
@@ -114,11 +117,23 @@ function App() {
         setEmployeeId(null);
     }, [instance]);
 
-    // Auto-login: redirect to Azure AD if not authenticated
+    // Auto-login: redirect to Azure AD if not authenticated.
+    // Cầu chì: mỗi tab chỉ tự redirect 1 lần. Lần 2 trở đi hiện nút bấm tay —
+    // nếu không, tab nào không khớp được MSAL state (vd browser đổi profile
+    // giữa chừng) sẽ redirect vô hạn và đẻ tab mới mỗi vòng.
     useEffect(() => {
-        if (!isAuthenticated && inProgress === InteractionStatus.None) {
-            handleLogin();
+        if (isAuthenticated) {
+            sessionStorage.removeItem(AUTO_LOGIN_FLAG);
+            return;
         }
+        if (inProgress !== InteractionStatus.None) return;
+
+        if (sessionStorage.getItem(AUTO_LOGIN_FLAG)) {
+            setAutoLoginBlocked(true);
+            return;
+        }
+        sessionStorage.setItem(AUTO_LOGIN_FLAG, '1');
+        handleLogin();
     }, [isAuthenticated, inProgress, handleLogin]);
 
     useEffect(() => {
@@ -236,8 +251,18 @@ function App() {
             {inProgress !== InteractionStatus.None && <LoadingSpinner />}
             {!isAuthenticated && inProgress === InteractionStatus.None && (
                 <div className="empty-state">
-                    <h2>Đang chuyển hướng đăng nhập...</h2>
-                    <p>Bạn sẽ được chuyển đến Azure AD.</p>
+                    {autoLoginBlocked ? (
+                        <>
+                            <h2>Chưa đăng nhập được</h2>
+                            <p>Phiên đăng nhập không hoàn tất. Bấm để thử lại.</p>
+                            <button className="btn-primary" onClick={handleLogin}>Đăng nhập</button>
+                        </>
+                    ) : (
+                        <>
+                            <h2>Đang chuyển hướng đăng nhập...</h2>
+                            <p>Bạn sẽ được chuyển đến Azure AD.</p>
+                        </>
+                    )}
                 </div>
             )}
             {isAuthenticated && !loading && (
@@ -343,9 +368,6 @@ function App() {
                             <Route path={ROUTES.MGMT_SIGNIN_LOG} element={<SignInLogPage />} />
                             <Route path={ROUTES.OPS_INCIDENTS} element={<IncidentsPage />} />
                             <Route path={ROUTES.MGMT_COMPLIANCE} element={<ManagementPage />} />
-
-                            {/* Demo — 1 route wildcard để component sống xuyên suốt, iframe keep-alive */}
-                            <Route path="/demo/*" element={<DemoEmbedPage />} />
 
                             {/* Fallback */}
                             <Route path="*" element={<Dashboard userName={userName} />} />

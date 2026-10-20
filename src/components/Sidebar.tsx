@@ -35,11 +35,6 @@ import {
     Calendar,
     FileText,
     DollarSign,
-    // Demo
-    FlaskConical,
-    Users,
-    Package,
-    ShoppingCart,
     // Other
     PanelLeftClose,
     PanelLeft,
@@ -125,16 +120,6 @@ const navGroups: NavGroup[] = [
             { path: ROUTES.PERSONAL_TIMESHEET, label: 'Timesheet', icon: <Calendar size={16} /> },
             { path: ROUTES.PERSONAL_REGISTRATION, label: 'Registration', icon: <FileText size={16} /> },
             { path: ROUTES.PERSONAL_PAYMENT, label: 'Payment Request', icon: <DollarSign size={16} /> },
-        ],
-    },
-    {
-        id: 'demo',
-        label: 'Demo',
-        icon: <FlaskConical size={16} />,
-        items: [
-            { path: ROUTES.DEMO_CUSTOMER, label: 'Customer', icon: <Users size={16} /> },
-            { path: ROUTES.DEMO_PRODUCT, label: 'Product', icon: <Package size={16} /> },
-            { path: ROUTES.DEMO_SALE_ORDER, label: 'Sale Order', icon: <ShoppingCart size={16} /> },
         ],
     },
 ];

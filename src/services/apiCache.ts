@@ -34,11 +34,3 @@ export function cacheClear(key: string): void {
     memory.delete(key);
     localStorage.removeItem(PREFIX + key);
 }
-
-export function cacheClearAll(): void {
-    memory.clear();
-    for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k?.startsWith(PREFIX)) localStorage.removeItem(k);
-    }
-}

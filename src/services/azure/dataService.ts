@@ -76,14 +76,6 @@ export interface FabricItem {
     upstreamDataflows: FabricUpstreamDataflow[];
 }
 
-export interface DataSummary {
-    dataflows: Dataflow[];
-    totalDataflows: number;
-    fabricWorkspaces: FabricWorkspace[];
-    fabricItems: FabricItem[];
-    lastUpdated: string;
-}
-
 // ── Power Platform Dataflows ──
 
 export async function fetchDataflows(accessToken: string): Promise<{ dataflows: Dataflow[]; total: number }> {

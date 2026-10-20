@@ -4,7 +4,7 @@
 
 import { dataverseConfig } from '@/config/authConfig';
 import { createFetchHeaders, createFetchHeadersWithAnnotations } from './common';
-import { PhieuDangKy, TeamRegistration, ApprovalStatus } from './types';
+import { PhieuDangKy, TeamRegistration } from './types';
 import { formatDate } from '@/utils/workUtils';
 
 /**
@@ -36,48 +36,6 @@ export async function fetchPhieuDangKyForMonth(
         return data.value || [];
     } catch (e) {
         console.error("Error calling PhieuDangKy API:", e);
-        return [];
-    }
-}
-
-/**
- * Fetch team registrations (all or filtered by month/year)
- */
-export async function fetchTeamRegistrations(
-    accessToken: string,
-    month?: number,
-    year?: number
-): Promise<TeamRegistration[]> {
-    let filter = `statecode eq 0`;
-
-    if (month !== undefined && year !== undefined) {
-        const startStr = formatDate(year, month, 1);
-        const nextMonthDate = new Date(year, month + 1, 1);
-        const startStrNext = formatDate(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), 1);
-        filter = `(crdfd_captrenduyet eq ${ApprovalStatus.ChuaDuyet}) or (crdfd_tungay ge ${startStr} and crdfd_tungay lt ${startStrNext})`;
-    }
-
-    const select = "crdfd_phieuangkyid,_crdfd_nhanvien_value,crdfd_loaiangky,crdfd_tungay,crdfd_enngay,crdfd_sogio2,crdfd_diengiai,crdfd_captrenduyet,crdfd_hinhthuc,crdfd_quanlytructiep,cr1bb_songay,cr1bb_sopheptonnamtruoc,new_sophepconlaitoithangthucte";
-    const url = `${dataverseConfig.baseUrl}/crdfd_phieuangkies?$filter=${encodeURIComponent(filter)}&$select=${select}`;
-
-    try {
-        const response = await fetch(url, {
-            headers: createFetchHeadersWithAnnotations(accessToken),
-        });
-
-        if (!response.ok) {
-            console.error("Error fetching team registrations:", await response.text());
-            return [];
-        }
-
-        const data = await response.json();
-        return (data.value || []).map((item: PhieuDangKy & { [key: string]: unknown }) => ({
-            ...item,
-            employeeName: (item['_crdfd_nhanvien_value@OData.Community.Display.V1.FormattedValue'] as string) || "Unknown",
-            employeeCode: undefined
-        }));
-    } catch (e) {
-        console.error("Error calling Team Registration API:", e);
         return [];
     }
 }
@@ -173,42 +131,6 @@ export async function createPhieuDangKy(
         }
     } catch (e) {
         console.error("Exception creating registration:", e);
-        return false;
-    }
-}
-
-/**
- * Update registration status (Approve/Reject)
- */
-export async function updateRegistrationStatus(
-    accessToken: string,
-    registrationId: string,
-    status: ApprovalStatus
-): Promise<boolean> {
-    const url = `${dataverseConfig.baseUrl}/crdfd_phieuangkies(${registrationId})`;
-
-    const payload = {
-        "crdfd_captrenduyet": status
-    };
-
-    try {
-        const response = await fetch(url, {
-            method: "PATCH",
-            headers: {
-                ...createFetchHeaders(accessToken),
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-            return true;
-        } else {
-            console.error("Error updating status:", response.status, await response.text());
-            return false;
-        }
-    } catch (e) {
-        console.error("Exception updating status:", e);
         return false;
     }
 }

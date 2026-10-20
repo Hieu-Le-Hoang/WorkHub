@@ -169,7 +169,7 @@ export const Calendar: React.FC<CalendarProps> = React.memo(({
                                             <span className="status-badge warning" title="Thiếu check-in/out hoặc giờ bất thường">⚠️</span>
                                         )}
                                         {/* Badge thiếu công — chưa có phiếu đăng ký */}
-                                        {record && record.status !== 'holiday' && !isVietnamHoliday(dateStr) &&
+                                        {record && record.status !== 'holiday' && record.status !== 'warning' && !isVietnamHoliday(dateStr) &&
                                             record.workValue < (getDayOfWeek(year, month, day!) === 6 ? 0.5 : 1.0) &&
                                             !record.registration && (
                                                 <span
@@ -208,28 +208,12 @@ export const Calendar: React.FC<CalendarProps> = React.memo(({
                     <span>Đủ công</span>
                 </div>
                 <div className="legend-item">
-                    <span className="legend-color insufficient"></span>
-                    <span>Thiếu giờ</span>
-                </div>
-                <div className="legend-item">
-                    <span className="legend-color warning"></span>
-                    <span>Cảnh báo</span>
-                </div>
-                <div className="legend-item">
-                    <span className="legend-color late"></span>
-                    <span>Đi trễ</span>
+                    <span className="legend-color issue"></span>
+                    <span>Cần xử lý</span>
                 </div>
                 <div className="legend-item">
                     <span className="legend-color leave"></span>
-                    <span>Nghỉ phép</span>
-                </div>
-                <div className="legend-item">
-                    <span className="legend-color off-day"></span>
-                    <span>Nghỉ</span>
-                </div>
-                <div className="legend-item">
-                    <span className="legend-color holiday"></span>
-                    <span>Ngày lễ</span>
+                    <span>Nghỉ phép / Lễ</span>
                 </div>
             </div>
         </div>

@@ -30,21 +30,6 @@ export interface AppNotification {
     actions: NotificationAction[];
 }
 
-// Icon type mapping
-export const ICON_TYPE_MAP: Record<number, { label: string; color: string; emoji: string }> = {
-    100000000: { label: 'Info', color: '#3b82f6', emoji: 'ℹ️' },
-    100000001: { label: 'Success', color: '#22c55e', emoji: '✅' },
-    100000002: { label: 'Failure', color: '#ef4444', emoji: '❌' },
-    100000003: { label: 'Warning', color: '#f59e0b', emoji: '⚠️' },
-    100000004: { label: 'Mention', color: '#8b5cf6', emoji: '💬' },
-};
-
-// Priority mapping
-export const PRIORITY_MAP: Record<number, { label: string; color: string }> = {
-    200000000: { label: 'Normal', color: '#94a3b8' },
-    200000001: { label: 'High', color: '#ef4444' },
-};
-
 /**
  * Get current user's systemuserid from Azure AD Object ID
  */

@@ -2,7 +2,7 @@
 type: Guideline
 title: WorkHub Admin Page — Design Pattern
 description: Hướng dẫn và tiêu chuẩn thiết kế UI/UX cho toàn bộ các trang trong hệ thống WorkHub
-timestamp: 2026-04-25T00:00:00Z
+timestamp: 2026-10-20T00:00:00Z
 owner: Hiếu Lê
 status: active
 ---
@@ -10,7 +10,71 @@ status: active
 # WorkHub Admin Page — Design Pattern
 
 > Template chuẩn cho tất cả admin/management pages trong WorkHub.
-> **Last Updated**: 2026-04-25
+> **Last Updated**: 2026-10-20
+
+---
+
+## Surface Style — Natural Gray ✅ (2026-10-20)
+
+> Nền xám trung tính (R = G = B, không ngả xanh), tông giữa — không light, không dark.
+> Mọi màu nền/chữ lấy từ token trong `:root` (`src/index.css`) — **không hardcode** hex/rgba ngả xanh (`#e8f4ff`, `rgba(148,184,216,…)`, navy `#060d1f`…).
+
+### Nền & chữ
+
+| Token | Giá trị | Dùng cho |
+|---|---|---|
+| `--bg-primary` | `#454545` | Nền ngoài cùng (page) |
+| `--sidebar-bg` / `--main-layout-bg` / `--bg-card` / `--bg-header` / `--item-bg` | `#4f4f4f` | Sidebar, khung chính, card |
+| `--component-bg` / `--bg-hover` | `#5b5b5b` | Box bên trong, hover |
+| `--bg-secondary` / `--bg-input` | `rgba(69,69,69,.6)` / `.8` | Lớp mờ, input |
+| `--text-primary` | `#f5f5f5` | Chữ chính |
+| `--text-secondary` | `#d4d4d4` | Chữ phụ, menu sidebar |
+| `--text-muted` | `#c2c2c2` | Chữ mờ, label, group header (contrast ≥ 4.5:1 trên `#4f4f4f`) |
+| `--border` / `--border-cell` | `rgba(255,255,255,.08)` | Viền trung tính (divider, ô lưới) |
+| `--accent-primary` | `#22d3ee` (cyan) | Accent — giữ nguyên |
+
+### Viền + đổ bóng card/panel
+
+| Token | Giá trị |
+|---|---|
+| `--border-card` | `rgba(34,211,238,0.35)` — viền cyan mảnh |
+| `--shadow-raised` | `0 6px 20px rgba(0,0,0,.28), 0 1px 3px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.06)` |
+
+- **Áp tự động** qua rule "PRIORITY FIX #1" cuối `index.css`: mọi class chứa chữ `card` + các panel `.calendar`, `.work-summary`, `.table-wrapper`, `.list-view-table-wrapper`, `.billing-section`.
+- Panel/section mới cần viền + bóng → thêm selector vào rule đó, hoặc tự dùng `border: 1px solid var(--border-card); box-shadow: var(--shadow-raised);`.
+- Hover card có thể đậm hơn: viền `rgba(34,211,238,.55)` + bóng `0 8px 24px rgba(0,0,0,.34)` (xem `.qa-card:hover`).
+
+### Bo góc
+
+| Cấp | Token | Giá trị | Áp cho |
+|---|---|---|---|
+| Card | `--radius-card` | `12px` | `.billing-stat-card`, `.qa-card`, `.stat-strip`, `.billing-section`, card nhỏ |
+| Panel / khung lớn | `--radius-full` | `16px` | `.calendar`, `.work-summary`, `.table-wrapper`, `.list-view-table-wrapper`, `.sidebar`, `.main-layout` |
+| Button / input | — | `8px` | Nút, ô search, tab |
+
+Luôn dùng token, không hardcode `10px` / `20px`.
+
+### Panel phụ bên trong page (vd tree bên trái Reports)
+
+Nền `var(--sidebar-glass)`, chữ item `--text-secondary`, group header `--text-muted`, hover `--text-primary`, active = cyan accent. Không dùng nền navy `rgba(5,12,26,…)`.
+
+### ⚠️ Gotcha — rule global `[class*="card"]`
+
+Rule này match **mọi class có chữ "card"**, kể cả phần tử con → từng cụm chữ bị đóng khung + bóng tối.
+
+- Phần tử con đặt tên dạng `xxx-card-yyy` / `card-yyy` (vd `stat-card-header`, `card-value`) — rule đã loại trừ `[class*="card-"]`.
+- Card cần tự quản lý viền/bóng (vd hover riêng) → thêm `:not(.ten-card)` vào rule (như `.qa-card`).
+- Component KHÔNG phải card thì đừng đặt tên chứa "card" (vd KPI strip dùng `.stat-strip`).
+
+### Trạng thái — tối đa 3 màu
+
+| Nhóm | Màu | Gộp |
+|---|---|---|
+| Ổn / Đủ công | xanh lá `--success` | normal |
+| Cần xử lý | amber `--warning` | thiếu giờ, cảnh báo, đi trễ, thiếu dữ liệu |
+| Nghỉ hợp lệ | cyan `--accent-primary` | nghỉ phép, ngày lễ |
+
+Chi tiết trong nhóm phân biệt bằng **badge chữ / tooltip**, không thêm màu mới. Ngày không làm việc (CN, tương lai) = xám nền, không đưa vào legend.
 
 ---
 
@@ -126,12 +190,45 @@ const { data: fabricData, loading: fabricLoading, refresh: loadFabric } = useApi
 
 ---
 
-## Stat Cards
+## Stat Cards ✅ (chuẩn cho mọi admin page — mẫu: Dataflow, Canvas App)
 
-- Label on top (small, muted)
-- Large number value below
-- Icon badge top-right (colored circle background + Lucide icon)
-- Colors: Purple `#8b5cf6`, Green `#10b981`, Blue `#3b82f6`, Amber `#f59e0b`
+```tsx
+<div className="billing-stats">
+    <div className="billing-stat-card">
+        <div className="billing-stat-header">
+            <span className="billing-stat-label">Total Dataflows</span>
+            <Workflow size={16} style={{ color: '#a78bfa' }} />
+        </div>
+        <span className="billing-stat-value">272</span>
+        <span className="billing-stat-sub">Total in environment</span>  {/* optional */}
+    </div>
+</div>
+```
+
+- Label trên (uppercase, nhỏ, muted) · icon Lucide 16px góc phải, tô màu theo ý nghĩa · số lớn bên dưới · sub-text tuỳ chọn.
+- KHÔNG tự chế card riêng bằng Tailwind (thanh màu trên đầu, blob glow…) — Automate Flow đã chuyển về pattern này 2026-10-20.
+- Colors icon: Purple `#8b5cf6`, Green `#10b981`, Blue `#3b82f6`, Amber `#f59e0b`
+- Ngoại lệ duy nhất: **Dashboard** dùng KPI Strip (bên dưới).
+
+### KPI Strip (Dashboard)
+
+Thay cho 4 stat card rời khi card to mà ít nội dung: 4 chỉ số trong **1 thanh**, ngăn bằng divider dọc.
+
+```tsx
+<div className="stat-strip">
+    <div className="stat-strip-item">
+        <div className="stat-icon stat-icon--green"><Shield size={20} /></div>
+        <div className="stat-strip-info">
+            <span className="stat-value">6</span>
+            <span className="stat-label">Active Tools</span>
+        </div>
+    </div>
+    {/* ... */}
+</div>
+```
+
+- Icon trái, số + label xếp chồng bên phải; viền `--border-card` + `--shadow-raised`.
+- Responsive: 4 cột → 2×2 (≤1024px) → 1 cột (≤600px).
 
 ## Tab Bar
 
@@ -157,18 +254,15 @@ const { data: fabricData, loading: fabricLoading, refresh: loadFabric } = useApi
 
 ## CSS Tokens Reference
 
+> Màu nền/chữ/viền/bóng: xem **Surface Style** ở đầu file (nguồn đúng duy nhất).
+
 | Token | Value |
 |-------|-------|
-| Background | `#09090b` |
-| Surface | `rgba(24,24,27,0.85)` + `blur(12px)` |
-| Border | `rgba(255,255,255,0.08)` |
-| Accent | `#a78bfa` (violet) |
 | Font body | Inter |
 | Font heading | Lexend |
 | Base font size | 16px |
-| Card radius | 12px |
+| Card radius | 12px (`--radius-card`) |
 | Button radius | 8px |
-| Hover glow | `box-shadow: 0 0 20px rgba(167,139,250,0.15)` |
 
 ## CSS Classes (existing)
 
@@ -238,7 +332,7 @@ Click bất kỳ row nào → slide-in panel từ phải, hiển thị full meta
 5. Tabs: `.logs-tabs` + `.logs-tab` + `.logs-tab.active`
 6. Table: `.billing-table-wrapper` + `.billing-table`
 7. Portals: `.management-grid` + `.management-card` (tab cuối)
-8. Add route in `routes/index.ts`
+8. Add route in `src/routes/index.ts`
 
 ---
 

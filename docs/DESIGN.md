@@ -14,22 +14,22 @@ status: active
 
 ---
 
-## Surface Style — Natural Gray ✅ (2026-10-20)
+## Surface Style — Gunmetal ✅ (2026-10-28)
 
-> Nền xám trung tính (R = G = B, không ngả xanh), tông giữa — không light, không dark.
+> Nền xám lạnh gunmetal (B nhỉnh hơn R, ngả nhẹ về xanh để ăn với accent cyan), tông tối. Thay Natural Gray `#454545`/`#4f4f4f` (2026-10-20) vì nền xám tầm trung nhìn mờ, "xi măng".
 > Mọi màu nền/chữ lấy từ token trong `:root` (`src/index.css`) — **không hardcode** hex/rgba ngả xanh (`#e8f4ff`, `rgba(148,184,216,…)`, navy `#060d1f`…).
 
 ### Nền & chữ
 
 | Token | Giá trị | Dùng cho |
 |---|---|---|
-| `--bg-primary` | `#454545` | Nền ngoài cùng (page) |
-| `--sidebar-bg` / `--main-layout-bg` / `--bg-card` / `--bg-header` / `--item-bg` | `#4f4f4f` | Sidebar, khung chính, card |
-| `--component-bg` / `--bg-hover` | `#5b5b5b` | Box bên trong, hover |
-| `--bg-secondary` / `--bg-input` | `rgba(69,69,69,.6)` / `.8` | Lớp mờ, input |
+| `--bg-primary` | `#2c3036` | Nền ngoài cùng (page) |
+| `--sidebar-bg` / `--main-layout-bg` / `--bg-card` / `--bg-header` / `--item-bg` | `#3a3f47` | Sidebar, khung chính, card |
+| `--component-bg` / `--bg-hover` | `#464c55` | Box bên trong, hover |
+| `--bg-secondary` / `--bg-input` | `rgba(44,48,54,.6)` / `.8` | Lớp mờ, input |
 | `--text-primary` | `#f5f5f5` | Chữ chính |
 | `--text-secondary` | `#d4d4d4` | Chữ phụ, menu sidebar |
-| `--text-muted` | `#c2c2c2` | Chữ mờ, label, group header (contrast ≥ 4.5:1 trên `#4f4f4f`) |
+| `--text-muted` | `#c2c2c2` | Chữ mờ, label, group header (contrast ≥ 4.5:1 trên `#3a3f47`) |
 | `--border` / `--border-cell` | `rgba(255,255,255,.08)` | Viền trung tính (divider, ô lưới) |
 | `--accent-primary` | `#22d3ee` (cyan) | Accent — giữ nguyên |
 

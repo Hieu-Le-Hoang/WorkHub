@@ -27,12 +27,12 @@
 :root {
   --base-font-size: 16px;
   --heading-font-size: 20px;
-  /* Default: Natural Mid Gray */
-  --bg-primary: #454545;
-  --bg-secondary: rgba(69, 69, 69, 0.6);
-  --bg-card: #4f4f4f;
-  --bg-hover: #5b5b5b;
-  --bg-header: #4f4f4f;
+  /* Default: Gunmetal (cool gray) */
+  --bg-primary: #2c3036;
+  --bg-secondary: rgba(44, 48, 54, 0.6);
+  --bg-card: #3a3f47;
+  --bg-hover: #464c55;
+  --bg-header: #3a3f47;
 
   --text-primary: #f5f5f5;
   --text-secondary: #d4d4d4;
@@ -70,15 +70,15 @@
   --item-glass: color-mix(in srgb, var(--item-bg), transparent calc(100% - var(--glass-opacity) * 100%));
   --overlay-bg: rgba(0, 0, 0, 0.92);
 
-  --sidebar-bg: #4f4f4f;
-  --main-layout-bg: #4f4f4f;
-  --component-bg: #5b5b5b;
-  --item-bg: #4f4f4f;
+  --sidebar-bg: #3a3f47;
+  --main-layout-bg: #3a3f47;
+  --component-bg: #464c55;
+  --item-bg: #3a3f47;
   --bg-calendar: var(--component-bg);
   --bg-cell: var(--item-bg);
-  --bg-off-day: rgba(79, 79, 79, 0.5);
+  --bg-off-day: rgba(58, 63, 71, 0.5);
   --border-cell: rgba(255, 255, 255, 0.08);
-  --bg-input: rgba(69, 69, 69, 0.8);
+  --bg-input: rgba(44, 48, 54, 0.8);
 }
 
 * {
